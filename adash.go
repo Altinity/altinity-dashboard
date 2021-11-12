@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
-	api "github.com/altinity/altinity-dashboard/internal/api"
+	_ "github.com/altinity/altinity-dashboard/internal/api"
 	"github.com/altinity/altinity-dashboard/internal/dev_server"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
@@ -33,8 +33,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	restful.DefaultContainer.Add(api.PodResource{}.WebService())
 
 	config := restfulspec.Config{
 		WebServices:                   restful.RegisteredWebServices(), // you control what services are visible
