@@ -16,7 +16,7 @@ export interface IInstancesProps {
 }
 
 // eslint-disable-next-line prefer-const
-let Instances: React.FunctionComponent<IInstancesProps> = () => (
+let Installations: React.FunctionComponent<IInstancesProps> = () => (
   <PageSection>
     <EmptyState variant={EmptyStateVariant.full}>
       <EmptyStateIcon icon={CubesIcon} />
@@ -40,4 +40,4 @@ let Instances: React.FunctionComponent<IInstancesProps> = () => (
   </PageSection>
 )
 
-export { Instances };
+export { Installations };

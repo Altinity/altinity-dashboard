@@ -4,7 +4,7 @@ import { Story } from '@storybook/react';
 
 //👇 This default export determines where your story goes in the story list
 export default {
-  title: 'Components/Instances',
+  title: 'Components/Installations',
   component: Operators,
 };
 

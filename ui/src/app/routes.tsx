@@ -6,7 +6,7 @@ import { Operators } from '@app/Operators/Operators';
 import { NotFound } from '@app/NotFound/NotFound';
 import { useDocumentTitle } from '@app/utils/useDocumentTitle';
 import { LastLocationProvider, useLastLocation } from 'react-router-last-location';
-import { Instances } from '@app/Instances/Instances';
+import { Installations } from '@app/Installations/Installations';
 
 let routeFocusTimer: number;
 export interface IAppRoute {
@@ -45,12 +45,12 @@ const routes: AppRouteConfig[] = [
     title: 'Altinity Dashboard | ClickHouse Operators',
   },
   {
-    component: Instances,
+    component: Installations,
     exact: true,
     isAsync: true,
-    label: 'ClickHouse Instances',
+    label: 'ClickHouse Installations',
     path: '/chis',
-    title: 'Altinity Dashboard | ClickHouse Instances',
+    title: 'Altinity Dashboard | ClickHouse Installations',
   },
 ];
 
