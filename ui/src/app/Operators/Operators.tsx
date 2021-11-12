@@ -8,8 +8,62 @@ import {
   EmptyStateVariant,
   EmptyStateIcon,
   EmptyStateBody,
-  EmptyStateSecondaryActions
+  EmptyStateSecondaryActions, Gallery, Card, CardTitle, CardBody
 } from '@patternfly/react-core';
+import { TableComposable, Thead, Tbody, Tr, Th, Td, Caption } from '@patternfly/react-table';
+
+interface Operator {
+  name: string
+  namespace: string
+  status: string
+  version: string
+}
+
+class OperatorTable extends React.Component {
+  state = {
+    operators: new Array<Operator>()
+  }
+  componentDidMount() {
+    fetch('/api/v1/operators')
+      .then(res => res.json())
+      .then(res => {
+        return res as Operator[]
+      })
+      .then(res => {
+        this.setState({ operators: res })
+      })
+  }
+  render() {
+    const columns = ['Name', 'Namespace', 'Status', 'Version']
+    const column_fields = ['name', 'namespace', 'status', 'version']
+    return (
+      <ul>
+        <TableComposable>
+          <Thead>
+            <Tr>
+              {
+                columns.map((column, columnIndex) => (
+                  <Th key={columnIndex}>{column}</Th>
+                ))
+              }
+            </Tr>
+          </Thead>
+          {
+            this.state.operators.map((op, opindex) => (
+              <Tr key={opindex}>
+                {
+                  columns.map((column, columnIndex) => (
+                    <Th key={columnIndex}>{op[column_fields[columnIndex]]}</Th>
+                  ))
+                }
+              </Tr>
+            ))
+          }
+        </TableComposable>
+      </ul>
+    )
+  }
+}
 
 export interface IOperatorsProps {
   sampleProp?: string;
@@ -18,25 +72,10 @@ export interface IOperatorsProps {
 // eslint-disable-next-line prefer-const
 let Operators: React.FunctionComponent<IOperatorsProps> = () => (
   <PageSection>
-    <EmptyState variant={EmptyStateVariant.full}>
-      <EmptyStateIcon icon={CubesIcon} />
-      <Title headingLevel="h1" size="lg">
-        Empty State (Stub Support Module)
-        </Title>
-      <EmptyStateBody>
-        This represents an the empty state pattern in Patternfly 4. Hopefully it&apos;s simple enough to use but flexible
-        enough to meet a variety of needs.
-        </EmptyStateBody>
-      <Button variant="primary">Primary Action</Button>
-      <EmptyStateSecondaryActions>
-        <Button variant="link">Multiple</Button>
-        <Button variant="link">Action Buttons</Button>
-        <Button variant="link">Can</Button>
-        <Button variant="link">Go here</Button>
-        <Button variant="link">In the secondary</Button>
-        <Button variant="link">Action area</Button>
-      </EmptyStateSecondaryActions>
-    </EmptyState>
+    <Title headingLevel="h1" size="lg">
+      ClickHouse Operators
+    </Title>
+    <OperatorTable/>
   </PageSection>
 )
 
