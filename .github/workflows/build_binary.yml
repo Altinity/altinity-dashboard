@@ -41,7 +41,7 @@ jobs:
         run: make adash
 
       - name: Build adash-dev
-        run: go build --tags dev -o adash-dev adash.go
+        run: make adash-dev
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
