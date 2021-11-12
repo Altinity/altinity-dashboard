@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "devel": "concurrently \"../adash\" \"npm run start:dev\"",
+    "devel": "concurrently \"../adash-dev\" \"npm run start:dev\"",
     "prebuild": "npm run clean",
     "dr:surge": "node dr-surge.js",
     "build": "webpack --config webpack.prod.js && npm run dr:surge",

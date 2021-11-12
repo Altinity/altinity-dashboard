@@ -10,7 +10,7 @@ ui/dist: $(shell git ls-files ui --cached --others --exclude-standard)
 	@cd ui && npm install --legacy-peer-deps && npm run build
 	@touch ui/dist
 
-ui-devel: adash
+ui-devel: adash-dev
 	@cd ui && npm run devel
 
 internal/dev_server/swagger-ui-dist: $(shell find swagger-ui/dist -type f)
