@@ -4,6 +4,7 @@ import (
 	"embed"
 	"flag"
 	api "github.com/altinity/altinity-dashboard/internal/api"
+	"github.com/altinity/altinity-dashboard/internal/dev_server"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	restful "github.com/emicklei/go-restful/v3"
@@ -19,10 +20,6 @@ import (
 //go:embed ui/dist
 var uiFiles embed.FS
 
-// Swagger UI embedded files
-//go:embed swagger-ui-dist
-var swaggerFiles embed.FS
-
 func main() {
 
 	var kubeconfig *string
@@ -32,7 +29,10 @@ func main() {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 	flag.Parse()
-	k8s.InitK8s(*kubeconfig)
+	err := k8s.InitK8s(*kubeconfig)
+	if err != nil {
+		panic(err)
+	}
 
 	restful.DefaultContainer.Add(api.PodResource{}.WebService())
 
@@ -46,13 +46,10 @@ func main() {
 	subFiles, _ := fs.Sub(uiFiles, "ui/dist")
 	http.Handle("/", http.FileServer(http.FS(subFiles)))
 
-	// Provide Swagger UI for easy browser access to the API
-	swaggerSubFiles, _ := fs.Sub(swaggerFiles, "swagger-ui-dist")
-	http.Handle("/apidocs/", http.StripPrefix("/apidocs/", http.FileServer(http.FS(swaggerSubFiles))))
+	// Add dev endpoints, if any
+	dev_server.AddDevEndpoints()
 
-	// Redirect to the Swagger UI if someone opens the root in the browser
-	// http.Handle("/", http.RedirectHandler("/apidocs/?url=/apidocs.json", 302))
-
+	// Start the server
 	log.Printf("start listening on localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
