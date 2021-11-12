@@ -10,6 +10,61 @@ import {
   EmptyStateBody,
   EmptyStateSecondaryActions
 } from '@patternfly/react-core';
+import { TableComposable, Thead, Tbody, Tr, Th, Td, Caption } from '@patternfly/react-table';
+
+interface CHI {
+  name: string
+  namespace: string
+  status: string
+  Clusters: bigint
+  Hosts: bigint
+}
+
+class CHITable extends React.Component {
+  state = {
+    chis: new Array<CHI>()
+  }
+  componentDidMount() {
+    fetch('/api/v1/chis')
+      .then(res => res.json())
+      .then(res => {
+        return res as CHI[]
+      })
+      .then(res => {
+        this.setState({ chis: res })
+      })
+  }
+  render() {
+    const columns = ['Name', 'Namespace', 'Status', 'Clusters', 'Hosts']
+    const column_fields = ['name', 'namespace', 'status', 'clusters', 'hosts']
+    return (
+      <ul>
+        <TableComposable>
+          <Thead>
+            <Tr>
+              {
+                columns.map((column, columnIndex) => (
+                  <Th key={columnIndex}>{column}</Th>
+                ))
+              }
+            </Tr>
+          </Thead>
+          {
+            this.state.chis.map((op, opindex) => (
+              <Tr key={opindex}>
+                {
+                  columns.map((column, columnIndex) => (
+                    <Th key={columnIndex}>{op[column_fields[columnIndex]]}</Th>
+                  ))
+                }
+              </Tr>
+            ))
+          }
+        </TableComposable>
+      </ul>
+    )
+  }
+}
 
 export interface IInstancesProps {
   sampleProp?: string;
@@ -18,25 +73,10 @@ export interface IInstancesProps {
 // eslint-disable-next-line prefer-const
 let Installations: React.FunctionComponent<IInstancesProps> = () => (
   <PageSection>
-    <EmptyState variant={EmptyStateVariant.full}>
-      <EmptyStateIcon icon={CubesIcon} />
-      <Title headingLevel="h1" size="lg">
-        Empty State (Stub Support Module)
-        </Title>
-      <EmptyStateBody>
-        This represents an the empty state pattern in Patternfly 4. Hopefully it&apos;s simple enough to use but flexible
-        enough to meet a variety of needs.
-        </EmptyStateBody>
-      <Button variant="primary">Primary Action</Button>
-      <EmptyStateSecondaryActions>
-        <Button variant="link">Multiple</Button>
-        <Button variant="link">Action Buttons</Button>
-        <Button variant="link">Can</Button>
-        <Button variant="link">Go here</Button>
-        <Button variant="link">In the secondary</Button>
-        <Button variant="link">Action area</Button>
-      </EmptyStateSecondaryActions>
-    </EmptyState>
+    <Title headingLevel="h1" size="lg">
+      ClickHouse Installations
+    </Title>
+    <CHITable/>
   </PageSection>
 )
 
