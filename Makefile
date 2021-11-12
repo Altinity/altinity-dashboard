@@ -1,4 +1,4 @@
-adash: adash.go ui swagger-ui-dist $(shell git ls-files internal --cached --others --exclude-standard)
+adash: adash.go ui/dist swagger-ui-dist $(shell git ls-files internal --cached --others --exclude-standard)
 	@go build adash.go
 
 ui: ui/dist
