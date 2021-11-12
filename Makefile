@@ -15,6 +15,6 @@ swagger-ui-dist: $(shell find swagger-ui/dist -type f)
 	@sed -i 's/https:\/\/petstore.swagger.io\/v2\/swagger.json/\/apidocs.json/' swagger-ui-dist/index.html
 
 clean:
-	@rm -rf adash swagger-ui-dist ui/build
+	@rm -rf adash swagger-ui-dist ui/dist
 
 .PHONY: ui ui-devel clean
