@@ -4,7 +4,6 @@ import (
 	"embed"
 	"flag"
 	_ "github.com/altinity/altinity-dashboard/internal/api"
-	"github.com/altinity/altinity-dashboard/internal/dev_server"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	restful "github.com/emicklei/go-restful/v3"
@@ -13,7 +12,10 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 )
 
 // UI embedded files
@@ -22,14 +24,21 @@ var uiFiles embed.FS
 
 func main() {
 
+	cmdFlags := flag.NewFlagSet("adash", flag.ContinueOnError)
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		kubeconfig = cmdFlags.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		kubeconfig = cmdFlags.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
-	flag.Parse()
-	err := k8s.InitK8s(*kubeconfig)
+	devMode := cmdFlags.Bool("devmode", false, "show Developer Tools tab")
+
+	err := cmdFlags.Parse(os.Args[1:])
+	if err != nil {
+		os.Exit(0)
+	}
+
+	err = k8s.InitK8s(*kubeconfig)
 	if err != nil {
 		panic(err)
 	}
@@ -40,12 +49,27 @@ func main() {
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
 	restful.DefaultContainer.Add(restfulspec.NewOpenAPIService(config))
 
-	// Serve the UI assets
-	subFiles, _ := fs.Sub(uiFiles, "ui/dist")
-	http.Handle("/", http.FileServer(http.FS(subFiles)))
+	indexHtmlOrig, err := uiFiles.ReadFile("ui/dist/index.html")
+	if err != nil {
+		panic(err)
+	}
 
-	// Add dev endpoints, if any
-	dev_server.AddDevEndpoints()
+	indexRegex := regexp.MustCompile(`meta name="devmode" content="(\w+)"`)
+	indexHtml := indexRegex.ReplaceAll(indexHtmlOrig, []byte(`meta name="devmode" content="` +
+		strconv.FormatBool(*devMode) + `"`))
+
+	// Create FileServer for the UI assets
+	subFiles, _ := fs.Sub(uiFiles, "ui/dist")
+	fs := http.FileServer(http.FS(subFiles))
+
+	// Handle requests
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if (r.URL.Path == "/") || (r.URL.Path == "/index.html") {
+			_, _ = w.Write(indexHtml)
+		} else {
+			fs.ServeHTTP(w, r)
+		}
+	})
 
 	// Start the server
 	log.Printf("start listening on localhost:8080")

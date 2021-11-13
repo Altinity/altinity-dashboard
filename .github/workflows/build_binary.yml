@@ -40,14 +40,9 @@ jobs:
       - name: Build adash
         run: make adash
 
-      - name: Build adash-dev
-        run: make adash-dev
-
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: Altinity Dashboard
-          path: |
-            adash
-            adash-dev
+          path: adash
 

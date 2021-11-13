@@ -5,6 +5,7 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const BG_IMAGES_DIRNAME = 'bgimages';
 const ASSET_PATH = process.env.ASSET_PATH || '/';
+const webpack = require('webpack');
 module.exports = env => {
 
   return {
@@ -124,7 +125,10 @@ module.exports = env => {
         patterns: [
           { from: './src/favicon.png', to: 'images' },
         ]
-      })
+      }),
+      new webpack.ProvidePlugin({
+        Buffer: ['buffer', 'Buffer'],
+      }),
     ],
     resolve: {
       extensions: ['.js', '.ts', '.tsx', '.jsx'],
@@ -134,7 +138,10 @@ module.exports = env => {
         })
       ],
       symlinks: false,
-      cacheWithContext: false
+      cacheWithContext: false,
+      fallback: {
+        buffer: require.resolve('buffer/'),
+      },
     }
   }
 };
