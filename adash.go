@@ -9,6 +9,7 @@ import (
 	restful "github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
 	"io/fs"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/util/homedir"
 	"log"
 	"net/http"
