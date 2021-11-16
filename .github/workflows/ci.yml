@@ -12,38 +12,11 @@ jobs:
   lint-and-build:
     runs-on: ubuntu-latest
     steps:
-
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
-
       - name: Check out repo
         uses: actions/checkout@v2
         with:
           submodules: recursive
-
-      - name: Install Node with caching
-        uses: bahmutov/npm-install@v1
-        with:
-          working-directory: ui
-          useRollingCache: true
-
-      - name: Build the UI
-        run: make ui
-
       - name: Run Go linter tasks
-        uses: golangci/golangci-lint-action@master
+        uses: golangci/golangci-lint-action@v2
         with:
           version: v1.43
-          skip-go-installation: true
-
-      - name: Build adash
-        run: make adash
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: Altinity Dashboard
-          path: adash
-
