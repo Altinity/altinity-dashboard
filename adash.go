@@ -24,7 +24,12 @@ import (
 //go:embed ui/dist
 var uiFiles embed.FS
 
-func main() {
+    func main() {
+	// Linter test
+	a := 1
+	a = 2
+	fmt.Printf("a is %d", a)
+
 	// Set up CLI parser
 	cmdFlags := flag.NewFlagSet("adash", flag.ContinueOnError)
 	kubeconfig := cmdFlags.String("kubeconfig", "", "path to the kubeconfig file")
