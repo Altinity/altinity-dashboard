@@ -14,9 +14,7 @@ jobs:
     steps:
       - name: Check out repo
         uses: actions/checkout@v2
-        with:
-          submodules: recursive
 
       - name: Send a test error
-        run: echo '::error file=.github/workflows/ci.yml,line=24,col=12::an error'
+        run: echo '::error file=.github/workflows/ci.yml,line=11,col=1::an error'
 
