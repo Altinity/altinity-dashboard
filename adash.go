@@ -76,8 +76,8 @@ func main() {
 		panic(err)
 	}
 	indexHtml := regexp.MustCompile(`meta name="devmode" content="(\w+)"`).
-		ReplaceAll(indexHtmlOrig, []byte(`meta name="devmode" content="` +
-		strconv.FormatBool(*devMode) + `"`))
+		ReplaceAll(indexHtmlOrig, []byte(`meta name="devmode" content="`+
+			strconv.FormatBool(*devMode)+`"`))
 
 	// Create HTTP router object
 	httpMux := http.NewServeMux()
@@ -121,7 +121,7 @@ func main() {
 func enrichSwaggerObject(swo *spec.Swagger) {
 	swo.Info = &spec.Info{
 		InfoProps: spec.InfoProps{
-			Title:       "Altinity Dashboard",
+			Title: "Altinity Dashboard",
 			Contact: &spec.ContactInfo{
 				ContactInfoProps: spec.ContactInfoProps{
 					Name:  "Altinity",

@@ -9,7 +9,7 @@ import (
 )
 
 type K8sInfo struct {
-	Config *rest.Config
+	Config    *rest.Config
 	Clientset *kubernetes.Clientset
 }
 

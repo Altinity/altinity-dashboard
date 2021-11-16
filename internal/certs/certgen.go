@@ -30,8 +30,8 @@ func GenerateSelfSignedCerts(RemoveOnExit bool) (certFileName string, keyFileNam
 		Subject: pkix.Name{
 			Organization: []string{"Self-Signed"},
 		},
-		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(time.Hour * 24 * 365),
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(time.Hour * 24 * 365),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
@@ -51,7 +51,7 @@ func GenerateSelfSignedCerts(RemoveOnExit bool) (certFileName string, keyFileNam
 		return "", "", err
 	}
 	err = pem.Encode(keyFile, &pem.Block{
-		Type: "RSA PRIVATE KEY",
+		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privKey),
 	})
 	if err != nil {
@@ -68,7 +68,7 @@ func GenerateSelfSignedCerts(RemoveOnExit bool) (certFileName string, keyFileNam
 		return "", "", err
 	}
 	err = pem.Encode(certFile, &pem.Block{
-		Type: "CERTIFICATE",
+		Type:  "CERTIFICATE",
 		Bytes: certBytes,
 	})
 	if err != nil {
@@ -88,7 +88,7 @@ func GenerateSelfSignedCerts(RemoveOnExit bool) (certFileName string, keyFileNam
 }
 
 func init() {
-	defer func(){
+	defer func() {
 		for _, fn := range filesToDelete {
 			_ = os.Remove(fn)
 		}
