@@ -5,6 +5,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   lint-and-build:
     runs-on: ubuntu-latest
@@ -31,6 +34,9 @@ jobs:
 
       - name: Run Go linter tasks
         uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.43
+          skip-go-installation: true
 
       - name: Build adash
         run: make adash
