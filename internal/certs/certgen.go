@@ -16,8 +16,7 @@ import (
 var filesToDelete []string
 
 // GenerateSelfSignedCerts generates self-signed certs, and optionally deletes them on program exit
-func GenerateSelfSignedCerts(RemoveOnExit bool) (certFileName string, keyFileName string, err error) {
-
+func GenerateSelfSignedCerts(removeOnExit bool) (certFileName string, keyFileName string, err error) {
 	// Generate private key
 	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -79,7 +78,7 @@ func GenerateSelfSignedCerts(RemoveOnExit bool) (certFileName string, keyFileNam
 		return "", "", err
 	}
 
-	if RemoveOnExit {
+	if removeOnExit {
 		filesToDelete = append(filesToDelete, keyFile.Name())
 		filesToDelete = append(filesToDelete, certFile.Name())
 	}

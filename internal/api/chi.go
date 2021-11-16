@@ -34,7 +34,6 @@ func (c ChiResource) WebService() *restful.WebService {
 // GET http://localhost:8080/chis
 func (c ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
 	k := k8s.GetK8s()
-	//kc := k.Clientset
 	cc, err := chopclientset.NewForConfig(k.Config)
 	if err != nil {
 		_ = response.WriteError(500, err)

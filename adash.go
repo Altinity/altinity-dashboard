@@ -25,9 +25,8 @@ import (
 var uiFiles embed.FS
 
 func main() {
-
+	// Set up CLI parser
 	cmdFlags := flag.NewFlagSet("adash", flag.ContinueOnError)
-
 	kubeconfig := cmdFlags.String("kubeconfig", "", "path to the kubeconfig file")
 	devMode := cmdFlags.Bool("devmode", false, "show Developer Tools tab")
 	bindHost := cmdFlags.String("bindhost", "localhost", "host to bind to (use 0.0.0.0 for all interfaces)")
@@ -71,12 +70,12 @@ func main() {
 	}
 
 	// Read the index.html from the bundled assets and set its devmode flag
-	indexHtmlOrig, err := uiFiles.ReadFile("ui/dist/index.html")
+	indexHTMLOrig, err := uiFiles.ReadFile("ui/dist/index.html")
 	if err != nil {
 		panic(err)
 	}
-	indexHtml := regexp.MustCompile(`meta name="devmode" content="(\w+)"`).
-		ReplaceAll(indexHtmlOrig, []byte(`meta name="devmode" content="`+
+	indexHTML := regexp.MustCompile(`meta name="devmode" content="(\w+)"`).
+		ReplaceAll(indexHTMLOrig, []byte(`meta name="devmode" content="`+
 			strconv.FormatBool(*devMode)+`"`))
 
 	// Create HTTP router object
@@ -101,7 +100,7 @@ func main() {
 	// Set up handler for http requests
 	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if (r.URL.Path == "/") || (r.URL.Path == "/index.html") {
-			_, _ = w.Write(indexHtml)
+			_, _ = w.Write(indexHTML)
 		} else {
 			subServer.ServeHTTP(w, r)
 		}

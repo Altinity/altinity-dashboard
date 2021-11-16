@@ -8,15 +8,14 @@ import (
 	"path/filepath"
 )
 
-type K8sInfo struct {
+type Info struct {
 	Config    *rest.Config
 	Clientset *kubernetes.Clientset
 }
 
-var globalK8s *K8sInfo
+var globalK8s *Info
 
 func InitK8s(kubeconfig string) error {
-
 	var config *rest.Config
 	var err error
 
@@ -41,7 +40,7 @@ func InitK8s(kubeconfig string) error {
 		return err
 	}
 
-	globalK8s = &K8sInfo{
+	globalK8s = &Info{
 		Config:    config,
 		Clientset: clientset,
 	}
@@ -49,6 +48,6 @@ func InitK8s(kubeconfig string) error {
 	return nil
 }
 
-func GetK8s() *K8sInfo {
+func GetK8s() *Info {
 	return globalK8s
 }
