@@ -18,9 +18,5 @@ jobs:
           submodules: recursive
 
       - name: Send a test error
-        run: echo '::error file=adash.go,line=24,col=12::an error'
+        run: echo '::error file=.github/workflows/ci.yml,line=24,col=12::an error'
 
-      - name: Run Go linter tasks
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: v1.43
