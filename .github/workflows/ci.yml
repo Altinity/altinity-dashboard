@@ -26,11 +26,14 @@ jobs:
           working-directory: ui
           useRollingCache: true
 
-      - name: Build adash
-        run: make adash
+      - name: Build the UI
+        run: make ui
 
       - name: Run Go linter tasks
         uses: golangci/golangci-lint-action@v2
+
+      - name: Build adash
+        run: make adash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
