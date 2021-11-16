@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"fmt"
 	_ "github.com/altinity/altinity-dashboard/internal/api"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
@@ -10,11 +11,9 @@ import (
 	"github.com/go-openapi/spec"
 	"io/fs"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/util/homedir"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 )
@@ -26,22 +25,19 @@ var uiFiles embed.FS
 func main() {
 
 	cmdFlags := flag.NewFlagSet("adash", flag.ContinueOnError)
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = cmdFlags.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = cmdFlags.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
+
+	kubeconfig := cmdFlags.String("kubeconfig", "", "path to the kubeconfig file")
 	devMode := cmdFlags.Bool("devmode", false, "show Developer Tools tab")
 
 	err := cmdFlags.Parse(os.Args[1:])
 	if err != nil {
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	err = k8s.InitK8s(*kubeconfig)
 	if err != nil {
-		panic(err)
+		fmt.Printf("Could not connect to Kubernetes: %s\n", err)
+		os.Exit(1)
 	}
 
 	config := restfulspec.Config{

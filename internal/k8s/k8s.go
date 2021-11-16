@@ -4,6 +4,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+	"path/filepath"
 )
 
 type K8sInfo struct {
@@ -14,7 +16,22 @@ type K8sInfo struct {
 var globalK8s *K8sInfo
 
 func InitK8s(kubeconfig string) error {
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+
+	var config *rest.Config
+	var err error
+
+	if kubeconfig == "" {
+		config, err = rest.InClusterConfig()
+		if err != nil {
+			home := homedir.HomeDir()
+			if home != "" {
+				config, err = clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
+			}
+		}
+	} else {
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
+
 	if err != nil {
 		return err
 	}
