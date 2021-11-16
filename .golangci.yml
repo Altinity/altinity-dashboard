@@ -32,7 +32,7 @@ linters:
     # - gofumpt
     - goheader
     # - goimports
-    - golint
+    # - golint
     # - gomoddirectives 
     - gomodguard
     - goprintffuncname
@@ -62,7 +62,7 @@ linters:
     - testpackage
     - thelper
     - tparallel
-    - typecheck
+    # - typecheck
     - unconvert
     - unparam
     - unused
