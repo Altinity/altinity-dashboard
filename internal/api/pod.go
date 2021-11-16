@@ -43,7 +43,3 @@ func (u PodResource) getAllPods(request *restful.Request, response *restful.Resp
 	}
 	_ = response.WriteEntity(list)
 }
-
-func init() {
-	restful.DefaultContainer.Add(PodResource{}.WebService())
-}

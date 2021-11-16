@@ -58,5 +58,4 @@ func (c ChiResource) getCHIs(request *restful.Request, response *restful.Respons
 
 func init() {
 	_ = chopapi.AddToScheme(scheme.Scheme)
-	restful.DefaultContainer.Add(ChiResource{}.WebService())
 }

@@ -4,10 +4,12 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"github.com/altinity/altinity-dashboard/internal/api"
 	_ "github.com/altinity/altinity-dashboard/internal/api"
+	"github.com/altinity/altinity-dashboard/internal/certs"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
 	"io/fs"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -28,39 +30,76 @@ func main() {
 
 	kubeconfig := cmdFlags.String("kubeconfig", "", "path to the kubeconfig file")
 	devMode := cmdFlags.Bool("devmode", false, "show Developer Tools tab")
+	bindHost := cmdFlags.String("bindhost", "localhost", "host to bind to (use 0.0.0.0 for all interfaces)")
+	bindPort := cmdFlags.String("bindport", "8080", "port to listen on")
+	tlsCert := cmdFlags.String("tlscert", "", "certificate file to use to serve TLS")
+	tlsKey := cmdFlags.String("tlskey", "", "private key file to use to serve TLS")
+	selfSigned := cmdFlags.Bool("selfsigned", false, "run TLS using self-signed key")
 
+	// Parse the CLI flags
 	err := cmdFlags.Parse(os.Args[1:])
 	if err != nil {
 		os.Exit(1)
 	}
 
+	// Check CLI flags for correctness
+	if (*tlsCert == "") != (*tlsKey == "") {
+		fmt.Printf("TLS cert and key must both be provided or neither")
+		os.Exit(1)
+	}
+	if (*selfSigned) && (*tlsCert != "") {
+		fmt.Printf("Cannot provide TLS certificate and also run self-signed")
+		os.Exit(1)
+	}
+
+	// Connect to Kubernetes
 	err = k8s.InitK8s(*kubeconfig)
 	if err != nil {
 		fmt.Printf("Could not connect to Kubernetes: %s\n", err)
 		os.Exit(1)
 	}
 
-	config := restfulspec.Config{
-		WebServices:                   restful.RegisteredWebServices(), // you control what services are visible
-		APIPath:                       "/apidocs.json",
-		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
-	restful.DefaultContainer.Add(restfulspec.NewOpenAPIService(config))
+	// If self-signed, generate the certificates
+	if *selfSigned {
+		cert, key, err := certs.GenerateSelfSignedCerts(true)
+		if err != nil {
+			fmt.Printf("Error generating self-signed certificate: %s\n", err)
+			os.Exit(1)
+		}
+		tlsCert = &cert
+		tlsKey = &key
+	}
 
+	// Read the index.html from the bundled assets and set its devmode flag
 	indexHtmlOrig, err := uiFiles.ReadFile("ui/dist/index.html")
 	if err != nil {
 		panic(err)
 	}
-
-	indexRegex := regexp.MustCompile(`meta name="devmode" content="(\w+)"`)
-	indexHtml := indexRegex.ReplaceAll(indexHtmlOrig, []byte(`meta name="devmode" content="` +
+	indexHtml := regexp.MustCompile(`meta name="devmode" content="(\w+)"`).
+		ReplaceAll(indexHtmlOrig, []byte(`meta name="devmode" content="` +
 		strconv.FormatBool(*devMode) + `"`))
+
+	// Create HTTP router object
+	httpMux := http.NewServeMux()
+
+	// Create Swagger-compatible API docs resource
+	rc := restful.NewContainer()
+	rc.ServeMux = httpMux
+	rc.Add(api.PodResource{}.WebService())
+	rc.Add(api.OperatorResource{}.WebService())
+	rc.Add(api.ChiResource{}.WebService())
+	config := restfulspec.Config{
+		WebServices:                   rc.RegisteredWebServices(), // you control what services are visible
+		APIPath:                       "/apidocs.json",
+		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
+	rc.Add(restfulspec.NewOpenAPIService(config))
 
 	// Create FileServer for the UI assets
 	subFiles, _ := fs.Sub(uiFiles, "ui/dist")
 	subServer := http.FileServer(http.FS(subFiles))
 
-	// Handle requests
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// Set up handler for http requests
+	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if (r.URL.Path == "/") || (r.URL.Path == "/index.html") {
 			_, _ = w.Write(indexHtml)
 		} else {
@@ -69,8 +108,14 @@ func main() {
 	})
 
 	// Start the server
-	log.Printf("start listening on localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	bindStr := fmt.Sprintf("%s:%s", *bindHost, *bindPort)
+	if *tlsCert != "" {
+		log.Printf("start listening on https://%s", bindStr)
+		log.Fatal(http.ListenAndServeTLS(bindStr, *tlsCert, *tlsKey, httpMux))
+	} else {
+		log.Printf("start listening on http://%s", bindStr)
+		log.Fatal(http.ListenAndServe(bindStr, httpMux))
+	}
 }
 
 func enrichSwaggerObject(swo *spec.Swagger) {

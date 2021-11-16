@@ -47,7 +47,3 @@ func (o OperatorResource) getOperators(request *restful.Request, response *restf
 	}
 	_ = response.WriteEntity(list)
 }
-
-func init() {
-	restful.DefaultContainer.Add(OperatorResource{}.WebService())
-}
