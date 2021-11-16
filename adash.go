@@ -57,14 +57,14 @@ func main() {
 
 	// Create FileServer for the UI assets
 	subFiles, _ := fs.Sub(uiFiles, "ui/dist")
-	fs := http.FileServer(http.FS(subFiles))
+	subServer := http.FileServer(http.FS(subFiles))
 
 	// Handle requests
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if (r.URL.Path == "/") || (r.URL.Path == "/index.html") {
 			_, _ = w.Write(indexHtml)
 		} else {
-			fs.ServeHTTP(w, r)
+			subServer.ServeHTTP(w, r)
 		}
 	})
 
