@@ -24,7 +24,7 @@ import (
 //go:embed ui/dist
 var uiFiles embed.FS
 
-func main() {
+    func main() {
 	// Set up CLI parser
 	cmdFlags := flag.NewFlagSet("adash", flag.ContinueOnError)
 	kubeconfig := cmdFlags.String("kubeconfig", "", "path to the kubeconfig file")
