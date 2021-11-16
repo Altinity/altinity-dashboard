@@ -38,8 +38,8 @@ jobs:
           version: v1.43
           skip-go-installation: true
 
-      - name: Run Go linter tasks again, but with stdout logged
-        run: golangci-lint run --out-format=github-actions
+      - name: Run Go linter tasks again, but with verbose
+        run: golangci-lint run -v
 
       - name: Build adash
         run: make adash
