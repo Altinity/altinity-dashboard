@@ -22,7 +22,8 @@
     "bundle-profile:analyze": "npm run build:bundle-profile && webpack-bundle-analyzer ./stats.json",
     "clean": "rimraf dist",
     "storybook": "start-storybook -p 6006",
-    "build:storybook": "build-storybook"
+    "build:storybook": "build-storybook",
+    "prepare": "cd .. && husky install ui/.husky"
   },
   "devDependencies": {
     "@storybook/addon-actions": "^6.2.9",
@@ -50,6 +51,7 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.3.1",
+    "husky": "^7.0.4",
     "imagemin": "^8.0.0",
     "jest": "^27.0.4",
     "mini-css-extract-plugin": "^1.6.0",

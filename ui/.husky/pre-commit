@@ -1,0 +1,8 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run Go linter
+golangci-lint run
+
+# Run Javascript/Typescript linter
+cd ui && npx eslint --max-warnings=0 src/
