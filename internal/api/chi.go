@@ -8,6 +8,7 @@ import (
 	restful "github.com/emicklei/go-restful/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"net/http"
 )
 
 // ChiResource is the REST layer to ClickHouse Installations
@@ -36,11 +37,13 @@ func (c ChiResource) getCHIs(request *restful.Request, response *restful.Respons
 	k := k8s.GetK8s()
 	cc, err := chopclientset.NewForConfig(k.Config)
 	if err != nil {
-		_ = response.WriteError(500, err)
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
 	}
 	chis, err := cc.ClickhouseV1().ClickHouseInstallations("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		_ = response.WriteError(500, err)
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
 	}
 	list := make([]Chi, 0, len(chis.Items))
 	for _, chi := range chis.Items {

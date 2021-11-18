@@ -5,6 +5,7 @@ import (
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	restful "github.com/emicklei/go-restful/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/http"
 )
 
 // OperatorResource is the REST layer to Pods
@@ -34,7 +35,8 @@ func (o OperatorResource) getOperators(request *restful.Request, response *restf
 		LabelSelector: "app=clickhouse-operator",
 	})
 	if err != nil {
-		_ = response.WriteError(500, err)
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
 	}
 	list := make([]Operator, 0, len(pods.Items))
 	for _, pod := range pods.Items {

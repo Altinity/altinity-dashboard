@@ -5,6 +5,7 @@ import (
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	restful "github.com/emicklei/go-restful/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/http"
 )
 
 // PodResource is the REST layer to Pods
@@ -32,7 +33,8 @@ func (u PodResource) WebService() *restful.WebService {
 func (u PodResource) getAllPods(request *restful.Request, response *restful.Response) {
 	pods, err := k8s.GetK8s().Clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		_ = response.WriteError(500, err)
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
 	}
 	list := make([]Pod, 0, len(pods.Items))
 	for _, pod := range pods.Items {

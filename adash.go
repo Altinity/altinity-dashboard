@@ -84,6 +84,7 @@ func main() {
 	// Create Swagger-compatible API docs resource
 	rc := restful.NewContainer()
 	rc.ServeMux = httpMux
+	rc.Add(api.NamespaceResource{}.WebService())
 	rc.Add(api.PodResource{}.WebService())
 	rc.Add(api.OperatorResource{}.WebService())
 	rc.Add(api.ChiResource{}.WebService())
