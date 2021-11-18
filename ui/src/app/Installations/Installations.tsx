@@ -1,16 +1,6 @@
 import * as React from 'react';
-import { CubesIcon } from '@patternfly/react-icons';
-import {
-  PageSection,
-  Title,
-  Button,
-  EmptyState,
-  EmptyStateVariant,
-  EmptyStateIcon,
-  EmptyStateBody,
-  EmptyStateSecondaryActions
-} from '@patternfly/react-core';
-import { TableComposable, Thead, Tbody, Tr, Th, Td, Caption } from '@patternfly/react-table';
+import { PageSection, Title } from '@patternfly/react-core';
+import { TableComposable, Thead, Tr, Th } from '@patternfly/react-table';
 
 interface CHI {
   name: string

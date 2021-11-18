@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Gallery, PageSection, Title } from '@patternfly/react-core';
-import { Card, CardTitle, CardBody, CardFooter } from '@patternfly/react-core';
+import { Card, CardTitle, CardBody } from '@patternfly/react-core';
 
 interface Pod {
   name: string

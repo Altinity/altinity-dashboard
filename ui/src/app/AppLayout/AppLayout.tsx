@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { NavLink, useLocation, useHistory } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   Nav,
   NavList,
