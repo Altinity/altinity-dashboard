@@ -32,11 +32,14 @@ jobs:
       - name: Build the UI
         run: make ui
 
-      - name: Run Go linter tasks
+      - name: Run Go linter
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.43
           skip-go-installation: true
+
+      - name: Run Javascript linter
+        run: cd ui && npx eslint --max-warnings=0 src/
 
       - name: Build adash
         run: make adash
