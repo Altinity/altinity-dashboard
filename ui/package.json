@@ -23,7 +23,7 @@
     "clean": "rimraf dist",
     "storybook": "start-storybook -p 6006",
     "build:storybook": "build-storybook",
-    "prepare": "cd .. && husky install ui/.husky"
+    "install-git-hooks": "cd .. && husky install ui/.husky"
   },
   "devDependencies": {
     "@storybook/addon-actions": "^6.2.9",
