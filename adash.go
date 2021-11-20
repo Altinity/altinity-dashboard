@@ -109,7 +109,11 @@ func main() {
 
 	// Set up handler for http requests
 	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if (r.URL.Path == "/") || (r.URL.Path == "/index.html") {
+		if (r.URL.Path == "/") ||
+			(r.URL.Path == "/index.html") ||
+			(r.URL.Path == "/operators") ||
+			(r.URL.Path == "/chis") ||
+			(r.URL.Path == "/devel") {
 			_, _ = w.Write(indexHTML)
 		} else {
 			subServer.ServeHTTP(w, r)
