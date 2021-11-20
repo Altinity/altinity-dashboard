@@ -7,9 +7,7 @@ LIST_FILES_CMD_PREFIX := find
 LIST_FILES_CMD_SUFFIX := -type f
 endif
 
-TEMPLATE_FILES := embed/clickhouse-operator-install-template.yaml embed/release
-
-adash: adash.go ui/dist $(TEMPLATE_FILES) $(shell $(LIST_FILES_CMD_PREFIX) internal $(LIST_FILES_CMD_SUFFIX))
+adash: adash.go ui/dist embed $(shell $(LIST_FILES_CMD_PREFIX) internal $(LIST_FILES_CMD_SUFFIX))
 	@go build adash.go
 
 ui: ui/dist
@@ -20,6 +18,8 @@ ui/dist: $(shell $(LIST_FILES_CMD_PREFIX) ui $(LIST_FILES_CMD_SUFFIX))
 
 ui-devel: adash
 	@cd ui && npm run devel
+
+embed: embed/clickhouse-operator-install-template.yaml embed/release
 
 embed/clickhouse-operator-install-template.yaml: clickhouse-operator/deploy/operator/clickhouse-operator-install-template.yaml
 	@mkdir -p embed

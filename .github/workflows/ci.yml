@@ -29,6 +29,9 @@ jobs:
           working-directory: ui
           useRollingCache: true
 
+      - name: Build the embed files
+        run: make embed
+
       - name: Build the UI
         run: make ui
 
