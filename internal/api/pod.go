@@ -20,7 +20,7 @@ func (u PodResource) WebService() *restful.WebService {
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("/").To(u.getAllPods).
+	ws.Route(ws.GET("").To(u.getAllPods).
 		// docs
 		Doc("get all pods").
 		Writes([]Pod{}).

@@ -24,6 +24,10 @@ import (
 //go:embed ui/dist
 var uiFiles embed.FS
 
+// ClickHouse Operator deployment template embedded file
+//go:embed embed
+var chopFiles embed.FS
+
 func main() {
 	// Set up CLI parser
 	cmdFlags := flag.NewFlagSet("adash", flag.ContinueOnError)
@@ -86,7 +90,12 @@ func main() {
 	rc.ServeMux = httpMux
 	rc.Add(api.NamespaceResource{}.WebService())
 	rc.Add(api.PodResource{}.WebService())
-	rc.Add(api.OperatorResource{}.WebService())
+	ws, err := api.OperatorResource{}.WebService(&chopFiles)
+	if err != nil {
+		fmt.Printf("Error initializing operator web service: %s\n", err)
+		os.Exit(1)
+	}
+	rc.Add(ws)
 	rc.Add(api.ChiResource{}.WebService())
 	config := restfulspec.Config{
 		WebServices:                   rc.RegisteredWebServices(), // you control what services are visible

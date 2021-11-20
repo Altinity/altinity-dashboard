@@ -56,12 +56,8 @@ class CHITable extends React.Component {
   }
 }
 
-export interface IInstancesProps {
-  sampleProp?: string;
-}
-
 // eslint-disable-next-line prefer-const
-let Installations: React.FunctionComponent<IInstancesProps> = () => (
+let Installations: React.FunctionComponent = () => (
   <PageSection>
     <Title headingLevel="h1" size="lg">
       ClickHouse Installations

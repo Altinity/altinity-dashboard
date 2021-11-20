@@ -23,7 +23,7 @@ func (c ChiResource) WebService() *restful.WebService {
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("/").To(c.getCHIs).
+	ws.Route(ws.GET("").To(c.getCHIs).
 		// docs
 		Doc("get all operators").
 		Writes([]Pod{}).

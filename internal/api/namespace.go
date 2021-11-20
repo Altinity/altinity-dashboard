@@ -14,20 +14,20 @@ type NamespaceResource struct {
 }
 
 // WebService creates a new service that can handle REST requests
-func (o NamespaceResource) WebService() *restful.WebService {
+func (n NamespaceResource) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/namespaces").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("/").To(o.getNamespaces).
+	ws.Route(ws.GET("").To(n.getNamespaces).
 		// docs
 		Doc("get all namespaces").
 		Writes([]Pod{}).
 		Returns(200, "OK", []Pod{}))
 
-	ws.Route(ws.PUT("").To(o.createNamespace).
+	ws.Route(ws.PUT("").To(n.createNamespace).
 		// docs
 		Doc("create a namespace").
 		Reads(Namespace{})) // from the request
@@ -36,7 +36,7 @@ func (o NamespaceResource) WebService() *restful.WebService {
 }
 
 // GET http://localhost:8080/namespaces
-func (o NamespaceResource) getNamespaces(request *restful.Request, response *restful.Response) {
+func (n NamespaceResource) getNamespaces(request *restful.Request, response *restful.Response) {
 	namespaces, err := k8s.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
@@ -45,26 +45,26 @@ func (o NamespaceResource) getNamespaces(request *restful.Request, response *res
 	list := make([]Namespace, 0, len(namespaces.Items))
 	for _, namespace := range namespaces.Items {
 		list = append(list, Namespace{
-			Name:      namespace.Name,
+			Name: namespace.Name,
 		})
 	}
 	_ = response.WriteEntity(list)
 }
 
 // PUT http://localhost:8080/namespaces
-func (o NamespaceResource) createNamespace(request *restful.Request, response *restful.Response) {
+func (n NamespaceResource) createNamespace(request *restful.Request, response *restful.Response) {
 	namespace := new(Namespace)
 	err := request.ReadEntity(&namespace)
 	if err != nil {
 		_ = response.WriteError(http.StatusBadRequest, err)
 		return
 	}
-	k := k8s.GetK8s().Clientset
 
 	// Check if the namespace already exists
+	k := k8s.GetK8s().Clientset
 	namespaces, err := k8s.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
-		FieldSelector:        "metadata.name=" + namespace.Name,
-		Limit:                1,
+		FieldSelector: "metadata.name=" + namespace.Name,
+		Limit:         1,
 	})
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
@@ -82,7 +82,7 @@ func (o NamespaceResource) createNamespace(request *restful.Request, response *r
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespace.Name,
 			},
-		}, 
+		},
 		metav1.CreateOptions{})
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
