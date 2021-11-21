@@ -1,4 +1,4 @@
-IS_GIT_REPO := $(shell if $$(git status >& /dev/null); then echo 1; else echo 0; fi)
+IS_GIT_REPO := $(shell if git status > /dev/null; then echo 1; else echo 0; fi)
 ifeq ($(IS_GIT_REPO),1)
 LIST_FILES_CMD_PREFIX := git ls-files
 LIST_FILES_CMD_SUFFIX := --cached --others --exclude-standard
