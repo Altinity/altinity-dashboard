@@ -32,7 +32,10 @@ embed/release: clickhouse-operator/release
 lint:
 	@ui/.husky/pre-commit
 
+format:
+	@go fmt ./...
+
 clean:
 	@rm -rf adash internal/dev_server/swagger-ui-dist ui/dist
 
-.PHONY: ui ui-devel lint clean
+.PHONY: ui ui-devel lint format clean

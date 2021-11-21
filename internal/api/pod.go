@@ -13,14 +13,14 @@ type PodResource struct {
 }
 
 // WebService creates a new service that can handle REST requests
-func (u PodResource) WebService() *restful.WebService {
+func (p *PodResource) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/pods").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("").To(u.getAllPods).
+	ws.Route(ws.GET("").To(p.getAllPods).
 		// docs
 		Doc("get all pods").
 		Writes([]Pod{}).
@@ -30,7 +30,7 @@ func (u PodResource) WebService() *restful.WebService {
 }
 
 // GET http://localhost:8080/pods
-func (u PodResource) getAllPods(request *restful.Request, response *restful.Response) {
+func (p *PodResource) getAllPods(request *restful.Request, response *restful.Response) {
 	pods, err := k8s.GetK8s().Clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)

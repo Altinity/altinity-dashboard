@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { PageSection, Title, Button, Split, SplitItem, Modal, ModalVariant } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th } from '@patternfly/react-table';
+import { TableComposable, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { NamespaceSelector } from '@app/Namespaces/Namespaces';
+import { Dropdown, DropdownItem, KebabToggle } from '@patternfly/react-core';
 
 interface Operator {
   name: string
@@ -38,14 +39,14 @@ class NewOperatorModal extends React.Component<
       })
     }
     this.onDeployClick = (): void => {
-      fetch('/api/v1/operators', {
-        method: 'POST',
+      fetch(`/api/v1/operators/${this.state.selectedNamespace}`, {
+        method: 'PUT',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          namespace: this.state.selectedNamespace
+          version: ""
           })
         })
         .then(() => {
@@ -89,6 +90,75 @@ class NewOperatorModal extends React.Component<
           <NamespaceSelector onSelect={this.onNamespaceSelect}/>
         </Modal>
       </React.Fragment>
+    );
+  }
+}
+
+class OperatorActionsMenu extends React.Component<
+  {
+    namespace: string
+  },
+  {
+    isOpen: boolean,
+  }> {
+  private readonly onToggle: (boolean) => void;
+  private readonly onSelect: () => void;
+  private readonly onFocus: () => void;
+  private readonly onDeleteClick: () => void;
+  private readonly onChangeVersionClick: () => void;
+  constructor(props) {
+    super(props)
+    this.state = {
+      isOpen: false
+    }
+    this.onToggle = isOpen => {
+      this.setState({
+        isOpen
+      })
+    }
+    this.onSelect = () => {
+      this.setState({
+        isOpen: !this.state.isOpen
+      })
+      this.onFocus()
+    }
+    this.onFocus = () => {
+      const element = document.getElementById('toggle-id-6')
+      if (element) element.focus()
+    }
+    this.onDeleteClick = () => {
+      fetch(`/api/v1/operators/${this.props.namespace}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+    }
+    this.onChangeVersionClick = () => {
+      console.log("Change Version clicked")
+    }
+  }
+
+  render() {
+    const { isOpen } = this.state;
+    const dropdownItems = [
+      <DropdownItem key="upgrade" component="button" onClick={this.onChangeVersionClick}>
+        Change Version
+      </DropdownItem>,
+      <DropdownItem key="delete" component="button" onClick={this.onDeleteClick}>
+        Delete
+      </DropdownItem>
+    ];
+    return (
+      <Dropdown
+        onSelect={this.onSelect}
+        toggle={<KebabToggle onToggle={this.onToggle} id="toggle-id-6" />}
+        isOpen={isOpen}
+        isPlain
+        dropdownItems={dropdownItems}
+        position="right"
+      />
     );
   }
 }
@@ -145,19 +215,25 @@ class OperatorTable extends React.Component<
                   <Th key={columnIndex}>{column}</Th>
                 ))
               }
+              <Th key="menu"/>
             </Tr>
           </Thead>
-          {
-            this.state.operators.map((op, opindex) => (
-              <Tr key={opindex}>
-                {
-                  columns.map((column, columnIndex) => (
-                    <Th key={columnIndex}>{op[column_fields[columnIndex]]}</Th>
-                  ))
-                }
-              </Tr>
-            ))
-          }
+          <Tbody>
+            {
+              this.state.operators.map((op, opindex) => (
+                <Tr key={opindex}>
+                  {
+                    columns.map((column, columnIndex) => (
+                      <Td key={columnIndex}>{op[column_fields[columnIndex]]}</Td>
+                    ))
+                  }
+                  <Td key="menu">
+                    <OperatorActionsMenu namespace={op.namespace} />
+                  </Td>
+                </Tr>
+              ))
+            }
+          </Tbody>
         </TableComposable>
       </ul>
     )

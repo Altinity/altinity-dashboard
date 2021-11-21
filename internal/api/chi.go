@@ -16,7 +16,7 @@ type ChiResource struct {
 }
 
 // WebService creates a new service that can handle REST requests
-func (c ChiResource) WebService() *restful.WebService {
+func (c *ChiResource) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/chis").
@@ -33,7 +33,7 @@ func (c ChiResource) WebService() *restful.WebService {
 }
 
 // GET http://localhost:8080/chis
-func (c ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
+func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
 	k := k8s.GetK8s()
 	cc, err := chopclientset.NewForConfig(k.Config)
 	if err != nil {

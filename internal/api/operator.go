@@ -20,12 +20,8 @@ type OperatorResource struct {
 	release          string
 }
 
-type OperatorDeploy struct {
-	Namespace string `json:"namespace" description:"namespace the operator will be deployed into"`
-}
-
 // WebService creates a new service that can handle REST requests
-func (o OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService, error) {
+func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService, error) {
 	bytes, err := chopFiles.ReadFile("embed/release")
 	if err != nil {
 		return nil, err
@@ -47,23 +43,30 @@ func (o OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService, 
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("").To(o.handleGetOperators).
+	ws.Route(ws.GET("").To(o.handleGet).
 		// docs
 		Doc("get all operators").
 		Writes([]Pod{}).
 		Returns(200, "OK", []Pod{}))
 
-	ws.Route(ws.POST("").To(o.handlePostOperators).
+	ws.Route(ws.PUT("/{namespace}").To(o.handlePut).
 		// docs
 		Doc("deploy an operator").
-		Reads(OperatorDeploy{}).
+		Param(ws.PathParameter("namespace", "namespace to deploy to").DataType("string")).
+		Param(ws.BodyParameter("version", "version to deploy").DataType("string")).
 		Returns(200, "OK", Operator{}))
+
+	ws.Route(ws.DELETE("/{namespace}").To(o.handleDelete).
+		// docs
+		Doc("delete an operator").
+		Param(ws.PathParameter("namespace", "namespace to delete from").DataType("string")).
+		Returns(200, "OK", nil))
 
 	return ws, nil
 }
 
 // Get a list of running clickhouse-operators
-func (o OperatorResource) getOperators(namespace string) ([]Operator, error) {
+func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
 	listOptions := metav1.ListOptions{
 		LabelSelector: "app=clickhouse-operator",
 	}
@@ -87,7 +90,7 @@ func (o OperatorResource) getOperators(namespace string) ([]Operator, error) {
 }
 
 // GET http://localhost:8080/operators
-func (o OperatorResource) handleGetOperators(request *restful.Request, response *restful.Response) {
+func (o *OperatorResource) handleGet(request *restful.Request, response *restful.Response) {
 	ops, err := o.getOperators("")
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
@@ -97,20 +100,16 @@ func (o OperatorResource) handleGetOperators(request *restful.Request, response 
 }
 
 // POST http://localhost:8080/operators
-func (o OperatorResource) handlePostOperators(request *restful.Request, response *restful.Response) {
-	od := new(OperatorDeploy)
-	err := request.ReadEntity(&od)
-	if err != nil {
-		_ = response.WriteError(http.StatusBadRequest, err)
-		return
+func (o *OperatorResource) deployOrDeleteOperator(namespace string, version string, doDelete bool) error {
+	if version == "" {
+		version = o.release
 	}
-
 	deploy, err := o.opDeployTemplate.Execute(func(key string) string {
 		s, ok := map[string]string{
-			"OPERATOR_IMAGE":             fmt.Sprintf("altinity/clickhouse-operator:%s", o.release),
-			"METRICS_EXPORTER_IMAGE":     fmt.Sprintf("altinity/metrics-exporter:%s", o.release),
-			"OPERATOR_NAMESPACE":         od.Namespace,
-			"METRICS_EXPORTER_NAMESPACE": od.Namespace,
+			"OPERATOR_IMAGE":             fmt.Sprintf("altinity/clickhouse-operator:%s", version),
+			"METRICS_EXPORTER_IMAGE":     fmt.Sprintf("altinity/metrics-exporter:%s", version),
+			"OPERATOR_NAMESPACE":         namespace,
+			"METRICS_EXPORTER_NAMESPACE": namespace,
 		}[key]
 		if ok {
 			return s
@@ -118,33 +117,76 @@ func (o OperatorResource) handlePostOperators(request *restful.Request, response
 		return ""
 	})
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
-		return
+		return err
 	}
 
 	k := k8s.GetK8s()
-	err = k.DoApply(deploy)
+	if doDelete {
+		err = k.DoDelete(deploy)
+	} else {
+		err = k.DoApply(deploy)
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// waitForOperator waits for an operator to exist in the namespace
+func (o *OperatorResource) waitForOperator(namespace string, timeout time.Duration) (*Operator, error) {
+	startTime := time.Now()
+	for {
+		ops, err := o.getOperators(namespace)
+		if err != nil {
+			return nil, err
+		}
+		if len(ops) > 0 {
+			return &ops[0], nil
+		}
+		if time.Now().After(startTime.Add(timeout)) {
+			return nil, errors.NewTimeoutError("timed out waiting for status", 30)
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
+// PUT http://localhost:8080/operators
+func (o *OperatorResource) handlePut(request *restful.Request, response *restful.Response) {
+	namespace := request.PathParameter("namespace")
+	if namespace == "" {
+		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "namespace is required"})
+		return
+	}
+	version, err := request.BodyParameter("version")
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
 		return
 	}
-
-	startTime := time.Now()
-	for {
-		ops, err := o.getOperators(od.Namespace)
-		if err != nil {
-			_ = response.WriteError(http.StatusInternalServerError, err)
-			return
-		}
-		if len(ops) > 0 {
-			_ = response.WriteEntity(ops[0])
-			return
-		}
-		if time.Now().After(startTime.Add(15 * time.Second)) {
-			_ = response.WriteError(http.StatusInternalServerError,
-				errors.NewTimeoutError("timed out waiting for status", 30))
-			return
-		}
-		time.Sleep(500 * time.Millisecond)
+	err = o.deployOrDeleteOperator(namespace, version, false)
+	if err != nil {
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
 	}
+	op, err := o.waitForOperator(namespace, 15*time.Second)
+	if err != nil {
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	_ = response.WriteEntity(op)
+}
+
+// DELETE http://localhost:8080/operators
+func (o *OperatorResource) handleDelete(request *restful.Request, response *restful.Response) {
+	namespace := request.PathParameter("namespace")
+	if namespace == "" {
+		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "namespace is required"})
+		return
+	}
+	err := o.deployOrDeleteOperator(namespace, "", true)
+	if err != nil {
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	_ = response.WriteEntity(nil)
 }

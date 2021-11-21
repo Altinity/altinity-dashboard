@@ -14,7 +14,7 @@ type NamespaceResource struct {
 }
 
 // WebService creates a new service that can handle REST requests
-func (n NamespaceResource) WebService() *restful.WebService {
+func (n *NamespaceResource) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/namespaces").
@@ -36,7 +36,7 @@ func (n NamespaceResource) WebService() *restful.WebService {
 }
 
 // GET http://localhost:8080/namespaces
-func (n NamespaceResource) getNamespaces(request *restful.Request, response *restful.Response) {
+func (n *NamespaceResource) getNamespaces(request *restful.Request, response *restful.Response) {
 	namespaces, err := k8s.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
@@ -52,7 +52,7 @@ func (n NamespaceResource) getNamespaces(request *restful.Request, response *res
 }
 
 // PUT http://localhost:8080/namespaces
-func (n NamespaceResource) createNamespace(request *restful.Request, response *restful.Response) {
+func (n *NamespaceResource) createNamespace(request *restful.Request, response *restful.Response) {
 	namespace := new(Namespace)
 	err := request.ReadEntity(&namespace)
 	if err != nil {

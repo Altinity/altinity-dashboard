@@ -73,9 +73,9 @@ func GetK8s() *Info {
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
-// DoApply does a server-side apply of a given YAML string
+// doApplyOrDelete does a server-side apply or delete of a given YAML string
 // Adapted from https://ymmt2005.hatenablog.com/entry/2020/04/14/An_example_of_using_dynamic_client_of_k8s.io/client-go
-func (i *Info) DoApply(yaml string) error {
+func (i *Info) doApplyOrDelete(yaml string, doDelete bool) error {
 	multiDocReader := utilyaml.NewYAMLReader(bufio.NewReader(strings.NewReader(yaml)))
 	yamlDocs := make([][]byte, 0)
 	for {
@@ -136,12 +136,29 @@ func (i *Info) DoApply(yaml string) error {
 		// 7. Create or Update the object with SSA
 		//     types.ApplyPatchType indicates SSA.
 		//     FieldManager specifies the field owner ID.
-		_, err = dr.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
-			FieldManager: "altinity-dashboard",
-		})
-		if err != nil {
-			return err
+		if doDelete {
+			err = dr.Delete(context.TODO(), obj.GetName(), metav1.DeleteOptions{})
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = dr.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
+				FieldManager: "altinity-dashboard",
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
+}
+
+// DoApply does a server-side apply of a given YAML string
+func (i *Info) DoApply(yaml string) error {
+	return i.doApplyOrDelete(yaml, false)
+}
+
+// DoDelete deletes the resources identified in a given YAML string
+func (i *Info) DoDelete(yaml string) error {
+	return i.doApplyOrDelete(yaml, true)
 }

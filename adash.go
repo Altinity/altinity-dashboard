@@ -88,15 +88,15 @@ func main() {
 	// Create Swagger-compatible API docs resource
 	rc := restful.NewContainer()
 	rc.ServeMux = httpMux
-	rc.Add(api.NamespaceResource{}.WebService())
-	rc.Add(api.PodResource{}.WebService())
-	ws, err := api.OperatorResource{}.WebService(&chopFiles)
+	rc.Add((&api.NamespaceResource{}).WebService())
+	rc.Add((&api.PodResource{}).WebService())
+	ws, err := (&api.OperatorResource{}).WebService(&chopFiles)
 	if err != nil {
 		fmt.Printf("Error initializing operator web service: %s\n", err)
 		os.Exit(1)
 	}
 	rc.Add(ws)
-	rc.Add(api.ChiResource{}.WebService())
+	rc.Add((&api.ChiResource{}).WebService())
 	config := restfulspec.Config{
 		WebServices:                   rc.RegisteredWebServices(), // you control what services are visible
 		APIPath:                       "/apidocs.json",
