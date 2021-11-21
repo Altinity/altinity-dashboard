@@ -83,7 +83,7 @@
     "@patternfly/react-core": "^4.162.3",
     "@patternfly/react-icons": "^4.13.1",
     "@patternfly/react-styles": "^4.12.5",
-    "@patternfly/react-table": "^4.37.8",
+    "@patternfly/react-table": "^4.44.4",
     "@storybook/builder-webpack5": "^6.2.9",
     "concurrently": "^6.3.0",
     "react": "^17.0.2",
