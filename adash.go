@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"flag"
 	"fmt"
@@ -26,7 +27,7 @@ var uiFiles embed.FS
 
 // ClickHouse Operator deployment template embedded file
 //go:embed embed
-var chopFiles embed.FS
+var embedFiles embed.FS
 
 func main() {
 	// Set up CLI parser
@@ -38,11 +39,31 @@ func main() {
 	tlsCert := cmdFlags.String("tlscert", "", "certificate file to use to serve TLS")
 	tlsKey := cmdFlags.String("tlskey", "", "private key file to use to serve TLS")
 	selfSigned := cmdFlags.Bool("selfsigned", false, "run TLS using self-signed key")
+	version := cmdFlags.Bool("version", false, "show version and exit")
 
 	// Parse the CLI flags
 	err := cmdFlags.Parse(os.Args[1:])
 	if err != nil {
 		os.Exit(1)
+	}
+
+	// If version was requested, print it and exit
+	if *version {
+		var verInfo []byte
+		var chopRelease []byte
+		verInfo, err = embedFiles.ReadFile("embed/version")
+		if err == nil {
+			chopRelease, err = embedFiles.ReadFile("embed/chop-release")
+		}
+		if err != nil {
+			fmt.Printf("Error reading version information")
+			os.Exit(1)
+		}
+		verInfo = bytes.TrimSpace(verInfo)
+		chopRelease = bytes.TrimSpace(chopRelease)
+		fmt.Printf("Altinity Dashboard version %s\n", verInfo)
+		fmt.Printf("   built using clickhouse-operator version %s\n", chopRelease)
+		os.Exit(0)
 	}
 
 	// Check CLI flags for correctness
@@ -90,7 +111,7 @@ func main() {
 	rc.ServeMux = httpMux
 	rc.Add((&api.NamespaceResource{}).WebService())
 	rc.Add((&api.PodResource{}).WebService())
-	ws, err := (&api.OperatorResource{}).WebService(&chopFiles)
+	ws, err := (&api.OperatorResource{}).WebService(&embedFiles)
 	if err != nil {
 		fmt.Printf("Error initializing operator web service: %s\n", err)
 		os.Exit(1)

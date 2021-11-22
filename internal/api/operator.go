@@ -27,7 +27,7 @@ type OperatorPutParams struct {
 
 // WebService creates a new service that can handle REST requests
 func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService, error) {
-	bytes, err := chopFiles.ReadFile("embed/release")
+	bytes, err := chopFiles.ReadFile("embed/chop-release")
 	if err != nil {
 		return nil, err
 	}

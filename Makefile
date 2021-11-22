@@ -19,15 +19,21 @@ ui/dist: $(shell $(LIST_FILES_CMD_PREFIX) ui $(LIST_FILES_CMD_SUFFIX))
 ui-devel: adash
 	@cd ui && npm run devel
 
-embed: embed/clickhouse-operator-install-template.yaml embed/release
+embed: embed/clickhouse-operator-install-template.yaml embed/chop-release embed/chop-versions embed/version
 
 embed/clickhouse-operator-install-template.yaml: clickhouse-operator/deploy/operator/clickhouse-operator-install-template.yaml
 	@mkdir -p embed
 	@cp $< $@
 
-embed/release: clickhouse-operator/release
+embed/chop-release: clickhouse-operator/release
 	@mkdir -p embed
 	@cp $< $@
+
+embed/chop-versions: clickhouse-operator
+	@( cd clickhouse-operator && git tag ) | grep -P '^[0123456789.]+$$' | sort -V > $@
+
+embed/version: ui/print-version.js ui/package.json
+	@( cd ui && node print-version.js ) > $@
 
 lint:
 	@ui/.husky/pre-commit
