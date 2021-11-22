@@ -9,13 +9,10 @@ module.exports = merge(common('development'), {
   mode: "development",
   devtool: "eval-source-map",
   devServer: {
-    contentBase: "./dist",
     host: HOST,
     port: PORT,
     compress: true,
-    inline: true,
     historyApiFallback: true,
-    overlay: true,
     open: true,
     proxy: {
         '/api': 'http://localhost:8080',
