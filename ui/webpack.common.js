@@ -113,6 +113,11 @@ module.exports = env => {
       path: path.resolve(__dirname, 'dist'),
       publicPath: ASSET_PATH
     },
+    performance: {
+      hints: false,
+      maxEntrypointSize: 5000000,
+      maxAssetSize: 5000000
+    },
     plugins: [
       new HtmlWebpackPlugin({
         template: path.resolve(__dirname, 'src', 'index.html')

@@ -36,6 +36,6 @@ format:
 	@go fmt ./...
 
 clean:
-	@rm -rf adash internal/dev_server/swagger-ui-dist ui/dist
+	@rm -rf adash internal/dev_server/swagger-ui-dist ui/dist embed
 
 .PHONY: ui ui-devel lint format clean
