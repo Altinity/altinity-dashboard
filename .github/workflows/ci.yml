@@ -1,4 +1,6 @@
 ---
+name: Lint and Build
+
 on:
   workflow_dispatch:
   pull_request:
