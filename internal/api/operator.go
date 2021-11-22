@@ -20,6 +20,11 @@ type OperatorResource struct {
 	release          string
 }
 
+// OperatorPutParams is the object for parameters to an operator PUT request
+type OperatorPutParams struct {
+	Version string `json:"version" description:"version of clickhouse-operator to deploy"`
+}
+
 // WebService creates a new service that can handle REST requests
 func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService, error) {
 	bytes, err := chopFiles.ReadFile("embed/release")
@@ -53,7 +58,7 @@ func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService,
 		// docs
 		Doc("deploy an operator").
 		Param(ws.PathParameter("namespace", "namespace to deploy to").DataType("string")).
-		Param(ws.BodyParameter("version", "version to deploy").DataType("string")).
+		Reads(OperatorPutParams{}).
 		Returns(200, "OK", Operator{}))
 
 	ws.Route(ws.DELETE("/{namespace}").To(o.handleDelete).
@@ -99,7 +104,7 @@ func (o *OperatorResource) handleGet(request *restful.Request, response *restful
 	_ = response.WriteEntity(ops)
 }
 
-// POST http://localhost:8080/operators
+// deployOrDeleteOperator deploys or deletes a clickhouse-operator
 func (o *OperatorResource) deployOrDeleteOperator(namespace string, version string, doDelete bool) error {
 	if version == "" {
 		version = o.release
@@ -158,12 +163,13 @@ func (o *OperatorResource) handlePut(request *restful.Request, response *restful
 		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "namespace is required"})
 		return
 	}
-	version, err := request.BodyParameter("version")
+	putParams := OperatorPutParams{}
+	err := request.ReadEntity(&putParams)
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
 		return
 	}
-	err = o.deployOrDeleteOperator(namespace, version, false)
+	err = o.deployOrDeleteOperator(namespace, putParams.Version, false)
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
 		return
