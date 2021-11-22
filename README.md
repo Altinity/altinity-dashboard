@@ -8,6 +8,7 @@ There are no stable releases of this yet.  The current development build is avai
 
 * Go to [Actions](https://github.com/Altinity/altinity-dashboard/actions).
 * Click on a recent workflow run where the build succeeded (ie, has a green checkmark).
+  * Choose one from the `main` branch unless you're specifically trying to run code from a pull request.
 * Download the Altinity Dashboard artifact from the bottom of the page.
 * Extract the `adash` file from the downloaded zip file.
 * Make it executable with `chmod a+x adash`.
