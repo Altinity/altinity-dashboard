@@ -23,11 +23,12 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Node with caching
-        uses: bahmutov/npm-install@v1
+      - name: Install Node
+        uses: actions/setup-node@v2
         with:
-          working-directory: ui
-          useRollingCache: true
+          node-version: 16
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
 
       - name: Build the embed files
         run: make embed
