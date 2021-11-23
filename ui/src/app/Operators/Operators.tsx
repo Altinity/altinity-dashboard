@@ -12,9 +12,11 @@ import {
   SplitItem,
   Title
 } from '@patternfly/react-core';
-import { ExpandableRowContent, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { NamespaceSelector } from '@app/Namespaces/Namespaces';
-import { SimpleModal } from '@app/SimpleModal/SimpleModal';
+import { SimpleModal } from '@app/Components/SimpleModal';
+import { useEffect, useState } from 'react';
+import { ExpandableTable } from '@app/Components/ExpandableTable';
+import { DataTable } from '@app/Components/DataTable';
 
 interface OperatorContainer {
   name: string
@@ -39,7 +41,6 @@ interface Operator {
 
 class NewOperatorModal extends React.Component<
   {
-    onDeployed?: () => void
   },
   {
     isModalOpen: boolean,
@@ -79,9 +80,6 @@ class NewOperatorModal extends React.Component<
           this.setState({
             isModalOpen: false
           })
-          if (this.props.onDeployed) {
-            this.props.onDeployed()
-          }
         })
       this.setState({
         isModalOpen: false
@@ -130,7 +128,6 @@ class OperatorActionsMenu extends React.Component<
   }> {
   private readonly onToggle: (boolean) => void;
   private readonly onSelect: () => void;
-  private readonly onFocus: () => void;
   private readonly onDeleteClick: () => void;
   private readonly onDeleteActionClick: () => void;
   private readonly onDeleteModalClose: () => void;
@@ -150,11 +147,6 @@ class OperatorActionsMenu extends React.Component<
       this.setState({
         isOpen: !this.state.isOpen
       })
-      this.onFocus()
-    }
-    this.onFocus = () => {
-      const element = document.getElementById('toggle-id-6')
-      if (element) element.focus()
     }
     this.onDeleteClick = () => {
       this.setState({
@@ -168,7 +160,7 @@ class OperatorActionsMenu extends React.Component<
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         }
-      })
+      }).then(() => { return })  // avoids warning
     }
     this.onDeleteModalClose = () => {
       this.setState({
@@ -205,7 +197,7 @@ class OperatorActionsMenu extends React.Component<
         </SimpleModal>
         <Dropdown
           onSelect={this.onSelect}
-          toggle={<KebabToggle onToggle={this.onToggle} id="toggle-id-6" />}
+          toggle={<KebabToggle onToggle={this.onToggle} />}
           isOpen={isOpen}
           isPlain
           dropdownItems={dropdownItems}
@@ -216,127 +208,23 @@ class OperatorActionsMenu extends React.Component<
   }
 }
 
-class OperatorTable extends React.Component<
-  {
-    onMounted?: (OperatorTable) => void
-  },
-  {
-    operators: Array<Operator>
-    rows_expanded: Map<number, boolean>
-  }> {
-  private timer: NodeJS.Timeout | null;
-  constructor(props) {
-    super(props)
-    this.timer = null
-    this.state = {
-      operators: new Array<Operator>(),
-      rows_expanded: new Map<number, boolean>(),
-    }
-  }
-  componentDidMount() {
-    if (this.props.onMounted) {
-      this.props.onMounted(this)
-    }
-    this.fetchData()
-    this.timer = setInterval(() => this.fetchData(), 2000)
-  }
-  componentWillUnmount() {
-    if (this.timer) {
-      clearInterval(this.timer)
-      this.timer = null
-    }
-  }
-  getExpanded(opIndex: number): boolean {
-    return this.state.rows_expanded.get(opIndex) || false
-  }
-  setExpanded(opIndex: number, expanded: boolean) {
-    this.setState((prevState) => {
-      const nextRows = new Map(prevState.rows_expanded)
-      return {
-        rows_expanded: nextRows.set(opIndex, expanded)
-      }
-    })
-  }
-  handleExpansionToggle = (_event, pairIndex: number) => {
-    this.setExpanded(pairIndex, !this.getExpanded(pairIndex))
-  }
-  fetchData() {
+// eslint-disable-next-line prefer-const
+let Operators: React.FunctionComponent = () => {
+  const [operators, setOperators] = useState(new Array<Operator>())
+  const fetchData = () => {
     fetch('/api/v1/operators')
       .then(res => res.json())
       .then(res => {
-        return res as Operator[]
-      })
-      .then(res => {
-        this.setState({ operators: res })
+        setOperators(res as Operator[])
       })
   }
-  render() {
-    const columns = ['Name', 'Namespace', 'Conditions', 'Version']
-    const column_fields = ['name', 'namespace', 'conditions', 'version']
-    let rowIndex = -2
-    return (
-      <TableComposable>
-        <Thead>
-          <Tr>
-            <Th/>
-            {
-              columns.map((column, columnIndex) => (
-                <Th key={columnIndex}>{column}</Th>
-              ))
-            }
-            <Th key="menu"/>
-          </Tr>
-        </Thead>
-        {
-          this.state.operators.map((op, opindex) => {
-            rowIndex += 2
-            return (
-              <Tbody key={opindex} isExpanded={this.getExpanded(opindex)}>
-                <Tr key={rowIndex}>
-                  <Td key={`${rowIndex}_0`} expand={{
-                    rowIndex: opindex,
-                    isExpanded: this.getExpanded(opindex),
-                    onToggle: this.handleExpansionToggle,
-                  }} />
-                  {
-                    columns.map((column, columnIndex) => (
-                      <Td key={`${rowIndex}_${columnIndex+1}`} dataLabel={column}>
-                        {op[column_fields[columnIndex]]}
-                      </Td>
-                    ))
-                  }
-                  <Td key="menu">
-                    <OperatorActionsMenu namespace={op.namespace} />
-                  </Td>
-                </Tr>
-                <Tr key={rowIndex+1} isExpanded={this.getExpanded(opindex)}>
-                  <Td key={`${rowIndex}_0`}/>
-                  <Td key={`${rowIndex}_1`} colSpan={columns.length}>
-                    <ExpandableRowContent>
-                      This is the expandable row content
-                    </ExpandableRowContent>
-                  </Td>
-                </Tr>
-              </Tbody>
-            )
-          })
-        }
-      </TableComposable>
-    )
-  }
-}
-
-// eslint-disable-next-line prefer-const
-let Operators: React.FunctionComponent = () => {
-  let ot: OperatorTable | null = null
-  const onTableMounted = (_ot: OperatorTable): void => {
-    ot = _ot
-  }
-  const onDeployed = (): void => {
-    if (ot) {
-      ot.fetchData()
+  useEffect(() => {
+    fetchData()
+    const timer = setInterval(() => fetchData(), 2000)
+    return () => {
+      clearInterval(timer)
     }
-  }
+  }, [])
   return (
     <PageSection>
       <Split>
@@ -346,10 +234,31 @@ let Operators: React.FunctionComponent = () => {
           </Title>
         </SplitItem>
         <SplitItem>
-          <NewOperatorModal onDeployed={onDeployed}/>
+          <NewOperatorModal/>
         </SplitItem>
       </Split>
-      <OperatorTable onMounted={onTableMounted}/>
+      <ExpandableTable
+        data={operators}
+        columns={['Name', 'Namespace', 'Conditions', 'Version']}
+        column_fields={['name', 'namespace', 'conditions', 'version']}
+        expanded_content={(data) => (
+          <ExpandableTable
+            data={data.pods}
+            columns={['Pod', 'Status', 'Version']}
+            column_fields={['name', 'status', 'version']}
+            expanded_content={(data) => (
+              <DataTable
+                data={data.containers}
+                columns={['Container', 'State', 'Image']}
+                column_fields={['name', 'state', 'image']}
+              />
+            )}
+          />
+        )}
+        action_menu={(data) => (
+          <OperatorActionsMenu namespace={data.namespace} />
+        )}
+      />
     </PageSection>
   )
 }
