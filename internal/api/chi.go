@@ -25,9 +25,9 @@ func (c *ChiResource) WebService() *restful.WebService {
 
 	ws.Route(ws.GET("").To(c.getCHIs).
 		// docs
-		Doc("get all operators").
-		Writes([]Pod{}).
-		Returns(200, "OK", []Pod{}))
+		Doc("get all ClickHouse Installations").
+		Writes([]Chi{}).
+		Returns(200, "OK", []Chi{}))
 
 	return ws
 }

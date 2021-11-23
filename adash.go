@@ -110,13 +110,13 @@ func main() {
 	rc := restful.NewContainer()
 	rc.ServeMux = httpMux
 	rc.Add((&api.NamespaceResource{}).WebService())
-	rc.Add((&api.PodResource{}).WebService())
-	ws, err := (&api.OperatorResource{}).WebService(&embedFiles)
+	var ows *restful.WebService
+	ows, err = (&api.OperatorResource{}).WebService(&embedFiles)
 	if err != nil {
 		fmt.Printf("Error initializing operator web service: %s\n", err)
 		os.Exit(1)
 	}
-	rc.Add(ws)
+	rc.Add(ows)
 	rc.Add((&api.ChiResource{}).WebService())
 	config := restfulspec.Config{
 		WebServices:                   rc.RegisteredWebServices(), // you control what services are visible

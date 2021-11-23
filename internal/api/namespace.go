@@ -24,8 +24,8 @@ func (n *NamespaceResource) WebService() *restful.WebService {
 	ws.Route(ws.GET("").To(n.getNamespaces).
 		// docs
 		Doc("get all namespaces").
-		Writes([]Pod{}).
-		Returns(200, "OK", []Pod{}))
+		Writes([]Namespace{}).
+		Returns(200, "OK", []Namespace{}))
 
 	ws.Route(ws.PUT("").To(n.createNamespace).
 		// docs

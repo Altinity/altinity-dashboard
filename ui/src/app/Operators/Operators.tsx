@@ -12,15 +12,29 @@ import {
   SplitItem,
   Title
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ExpandableRowContent, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { NamespaceSelector } from '@app/Namespaces/Namespaces';
 import { SimpleModal } from '@app/SimpleModal/SimpleModal';
+
+interface OperatorContainer {
+  name: string
+  state: string
+  image: string
+}
+
+interface OperatorPod {
+  name: string
+  status: string
+  version: string
+  containers: Array<OperatorContainer>
+}
 
 interface Operator {
   name: string
   namespace: string
-  status: string
+  conditions: string
   version: string
+  pods: Array<OperatorPod>
 }
 
 class NewOperatorModal extends React.Component<
@@ -208,13 +222,15 @@ class OperatorTable extends React.Component<
   },
   {
     operators: Array<Operator>
+    rows_expanded: Map<number, boolean>
   }> {
   private timer: NodeJS.Timeout | null;
   constructor(props) {
     super(props)
     this.timer = null
     this.state = {
-      operators: new Array<Operator>()
+      operators: new Array<Operator>(),
+      rows_expanded: new Map<number, boolean>(),
     }
   }
   componentDidMount() {
@@ -230,7 +246,20 @@ class OperatorTable extends React.Component<
       this.timer = null
     }
   }
-
+  getExpanded(opIndex: number): boolean {
+    return this.state.rows_expanded.get(opIndex) || false
+  }
+  setExpanded(opIndex: number, expanded: boolean) {
+    this.setState((prevState) => {
+      const nextRows = new Map(prevState.rows_expanded)
+      return {
+        rows_expanded: nextRows.set(opIndex, expanded)
+      }
+    })
+  }
+  handleExpansionToggle = (_event, pairIndex: number) => {
+    this.setExpanded(pairIndex, !this.getExpanded(pairIndex))
+  }
   fetchData() {
     fetch('/api/v1/operators')
       .then(res => res.json())
@@ -242,12 +271,14 @@ class OperatorTable extends React.Component<
       })
   }
   render() {
-    const columns = ['Name', 'Namespace', 'Status', 'Version']
-    const column_fields = ['name', 'namespace', 'status', 'version']
+    const columns = ['Name', 'Namespace', 'Conditions', 'Version']
+    const column_fields = ['name', 'namespace', 'conditions', 'version']
+    let rowIndex = -2
     return (
       <TableComposable>
         <Thead>
           <Tr>
+            <Th/>
             {
               columns.map((column, columnIndex) => (
                 <Th key={columnIndex}>{column}</Th>
@@ -256,22 +287,40 @@ class OperatorTable extends React.Component<
             <Th key="menu"/>
           </Tr>
         </Thead>
-        <Tbody>
-          {
-            this.state.operators.map((op, opindex) => (
-              <Tr key={opindex}>
-                {
-                  columns.map((column, columnIndex) => (
-                    <Td key={columnIndex} dataLabel={column}>{op[column_fields[columnIndex]]}</Td>
-                  ))
-                }
-                <Td key="menu">
-                  <OperatorActionsMenu namespace={op.namespace} />
-                </Td>
-              </Tr>
-            ))
-          }
-        </Tbody>
+        {
+          this.state.operators.map((op, opindex) => {
+            rowIndex += 2
+            return (
+              <Tbody key={opindex} isExpanded={this.getExpanded(opindex)}>
+                <Tr key={rowIndex}>
+                  <Td key={`${rowIndex}_0`} expand={{
+                    rowIndex: opindex,
+                    isExpanded: this.getExpanded(opindex),
+                    onToggle: this.handleExpansionToggle,
+                  }} />
+                  {
+                    columns.map((column, columnIndex) => (
+                      <Td key={`${rowIndex}_${columnIndex+1}`} dataLabel={column}>
+                        {op[column_fields[columnIndex]]}
+                      </Td>
+                    ))
+                  }
+                  <Td key="menu">
+                    <OperatorActionsMenu namespace={op.namespace} />
+                  </Td>
+                </Tr>
+                <Tr key={rowIndex+1} isExpanded={this.getExpanded(opindex)}>
+                  <Td key={`${rowIndex}_0`}/>
+                  <Td key={`${rowIndex}_1`} colSpan={columns.length}>
+                    <ExpandableRowContent>
+                      This is the expandable row content
+                    </ExpandableRowContent>
+                  </Td>
+                </Tr>
+              </Tbody>
+            )
+          })
+        }
       </TableComposable>
     )
   }

@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	"github.com/drone/envsubst"
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"net/http"
 	"strings"
 	"time"
@@ -51,8 +54,8 @@ func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService,
 	ws.Route(ws.GET("").To(o.handleGet).
 		// docs
 		Doc("get all operators").
-		Writes([]Pod{}).
-		Returns(200, "OK", []Pod{}))
+		Writes([]Operator{}).
+		Returns(200, "OK", []Operator{}))
 
 	ws.Route(ws.PUT("/{namespace}").To(o.handlePut).
 		// docs
@@ -70,25 +73,106 @@ func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService,
 	return ws, nil
 }
 
-// Get a list of running clickhouse-operators
-func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
-	listOptions := metav1.ListOptions{
-		LabelSelector: "app=clickhouse-operator",
+// getContainersFromPod gets a list of OperatorContainers from a pod
+func (o *OperatorResource) getContainersFromPod(pod corev1.Pod) []OperatorContainer {
+	cs := pod.Status.ContainerStatuses
+	list := make([]OperatorContainer, 0, len(cs))
+	for _, c := range cs {
+		state := "Unknown"
+		switch {
+		case c.State.Terminated != nil:
+			state = "Terminated"
+		case c.State.Running != nil:
+			state = "Running"
+		case c.State.Waiting != nil:
+			state = "Waiting"
+		}
+		list = append(list, OperatorContainer{
+			Name:  c.Name,
+			State: state,
+			Image: c.Image,
+		})
 	}
-	if namespace != "" {
-		listOptions.FieldSelector = fmt.Sprintf("metadata.namespace=%s", namespace)
-	}
-	pods, err := k8s.GetK8s().Clientset.CoreV1().Pods("").List(context.TODO(), listOptions)
+	return list
+}
+
+// getPodsFromDeployment gets a list of OperatorPods from a deployment
+func (o *OperatorResource) getPodsFromDeployment(namespace string, deployment appsv1.Deployment) ([]OperatorPod, error) {
+	s := deployment.Spec.Selector
+	ls, err := metav1.LabelSelectorAsMap(s)
 	if err != nil {
 		return nil, err
 	}
-	list := make([]Operator, 0, len(pods.Items))
+	pods, err := k8s.GetK8s().Clientset.CoreV1().Pods(namespace).List(context.TODO(),
+		metav1.ListOptions{
+			LabelSelector: labels.SelectorFromSet(ls).String(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	list := make([]OperatorPod, 0, len(pods.Items))
 	for _, pod := range pods.Items {
+		l := pod.Labels
+		ver, ok := l["version"]
+		if !ok {
+			ver, ok = l["clickhouse.altinity.com/chop"]
+			if !ok {
+				ver = "unknown"
+			}
+		}
+		list = append(list, OperatorPod{
+			Name:       pod.Name,
+			Status:     string(pod.Status.Phase),
+			Version:    ver,
+			Containers: o.getContainersFromPod(pod),
+		})
+	}
+	return list, nil
+}
+
+// Get a list of running clickhouse-operators
+func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
+	deployments, err := k8s.GetK8s().Clientset.AppsV1().Deployments(namespace).List(
+		context.TODO(), metav1.ListOptions{
+			LabelSelector: "app=clickhouse-operator",
+		})
+	if err != nil {
+		return nil, err
+	}
+	list := make([]Operator, 0, len(deployments.Items))
+	for _, deployment := range deployments.Items {
+		conds := deployment.Status.Conditions
+		condStrs := make([]string, 0, len(conds))
+		for _, cond := range conds {
+			if cond.Status == corev1.ConditionTrue {
+				condStrs = append(condStrs, string(cond.Type))
+			}
+		}
+		var condStr string
+		if len(condStrs) > 0 {
+			condStr = strings.Join(condStrs, ", ")
+		} else {
+			condStr = "Unavailable"
+		}
+		l := deployment.Labels
+		ver, ok := l["version"]
+		if !ok {
+			ver, ok = l["clickhouse.altinity.com/chop"]
+			if !ok {
+				ver = "unknown"
+			}
+		}
+		pods, err := o.getPodsFromDeployment(deployment.Namespace, deployment)
+		if err != nil {
+			return nil, err
+		}
 		list = append(list, Operator{
-			Name:      pod.Name,
-			Namespace: pod.Namespace,
-			Status:    string(pod.Status.Phase),
-			Version:   pod.Spec.Containers[0].Image,
+			Name:       deployment.Name,
+			Namespace:  deployment.Namespace,
+			Conditions: condStr,
+			Version:    ver,
+			Pods:       pods,
 		})
 	}
 	return list, nil
