@@ -8,6 +8,7 @@ class DataTable extends React.Component<
     columns: Array<string>
     column_fields: Array<string>
     action_menu?: (object) => ReactElement
+    table_variant?: "compact"
   },
   {
   }> {
@@ -16,7 +17,7 @@ class DataTable extends React.Component<
     const menuBody = (item: object): ReactElement|null => {
       if (this.props.action_menu) {
         return (
-          <Td>
+          <Td noPadding={true}>
             {this.props.action_menu(item)}
           </Td>
         )
@@ -25,7 +26,7 @@ class DataTable extends React.Component<
       }
     }
     return (
-      <TableComposable>
+      <TableComposable variant={this.props.table_variant}>
         <Thead>
           <Tr>
             {

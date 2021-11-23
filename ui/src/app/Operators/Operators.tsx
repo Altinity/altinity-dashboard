@@ -242,12 +242,12 @@ let Operators: React.FunctionComponent = () => {
         columns={['Name', 'Namespace', 'Conditions', 'Version']}
         column_fields={['name', 'namespace', 'conditions', 'version']}
         expanded_content={(data) => (
-          <ExpandableTable
+          <ExpandableTable table_variant="compact"
             data={data.pods}
             columns={['Pod', 'Status', 'Version']}
             column_fields={['name', 'status', 'version']}
             expanded_content={(data) => (
-              <DataTable
+              <DataTable table_variant="compact"
                 data={data.containers}
                 columns={['Container', 'State', 'Image']}
                 column_fields={['name', 'state', 'image']}

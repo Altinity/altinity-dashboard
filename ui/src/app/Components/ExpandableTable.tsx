@@ -9,6 +9,7 @@ class ExpandableTable extends React.Component<
     column_fields: Array<string>
     expanded_content: (object) => ReactElement
     action_menu?: (object) => ReactElement
+    table_variant?: "compact"
   },
   {
     rows_expanded: Map<number, boolean>
@@ -48,7 +49,7 @@ class ExpandableTable extends React.Component<
       }
     }
     return (
-      <TableComposable>
+      <TableComposable variant={this.props.table_variant}>
         <Thead>
           <Tr>
             <Th/>
@@ -66,7 +67,7 @@ class ExpandableTable extends React.Component<
             return (
               <Tbody key={dataIndex} isExpanded={this.getExpanded(dataIndex)}>
                 <Tr key={rowIndex}>
-                  <Td key={`${rowIndex}_0`} expand={{
+                  <Td key={`${rowIndex}_0`} noPadding={true} expand={{
                     rowIndex: dataIndex,
                     isExpanded: this.getExpanded(dataIndex),
                     onToggle: this.handleExpansionToggle,
@@ -81,7 +82,8 @@ class ExpandableTable extends React.Component<
                   {menuBody(dataItem)}
                 </Tr>
                 <Tr key={rowIndex+1} isExpanded={this.getExpanded(dataIndex)}>
-                  <Td key={`${rowIndex}_0`} colSpan={this.props.columns.length+1}>
+                  <Td/>
+                  <Td key={`${rowIndex}_0`} colSpan={this.props.columns.length+1} noPadding={true}>
                     <ExpandableRowContent>
                       {this.props.expanded_content(dataItem)}
                     </ExpandableRowContent>
