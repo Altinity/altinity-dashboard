@@ -8,6 +8,7 @@ import { useDocumentTitle } from '@app/utils/useDocumentTitle';
 import { LastLocationProvider, useLastLocation } from 'react-router-last-location';
 import { Installations } from '@app/Installations/Installations';
 import { Devel } from '@app/Devel/Devel';
+import { AddAlertType, AlertData } from '@app/index';
 
 let routeFocusTimer: number;
 export interface IAppRoute {
@@ -20,6 +21,7 @@ export interface IAppRoute {
   title: string;
   isAsync?: boolean;
   routes?: undefined;
+  addAlert?: AddAlertType;
 }
 
 export interface IAppRouteGroup {
@@ -106,7 +108,11 @@ const flattenedRoutes: IAppRoute[] = routes.reduce(
   [] as IAppRoute[]
 );
 
-const AppRoutes = (): React.ReactElement => (
+export interface AppRoutesProps {
+  addAlert: (data: AlertData) => void
+}
+
+const AppRoutes = (props: AppRoutesProps): React.ReactElement => (
   <LastLocationProvider>
     <Switch>
       {flattenedRoutes.map(({ path, exact, component, title, isAsync }, idx) => (
@@ -117,6 +123,7 @@ const AppRoutes = (): React.ReactElement => (
           key={idx}
           title={title}
           isAsync={isAsync}
+          addAlert={props.addAlert}
         />
       ))}
       <PageNotFound title="404 Page Not Found" />

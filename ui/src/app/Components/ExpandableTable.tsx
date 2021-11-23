@@ -36,7 +36,7 @@ class ExpandableTable extends React.Component<
   }
   render() {
     let rowIndex = -2
-    const menuHeader = this.props.action_menu ? <Th key="menu"/> : ""
+    const menuHeader = this.props.action_menu ? <Th key="menu"/> : null
     const menuBody = (item: object): ReactElement|null => {
       if (this.props.action_menu) {
         return (
@@ -83,7 +83,7 @@ class ExpandableTable extends React.Component<
                 </Tr>
                 <Tr key={rowIndex+1} isExpanded={this.getExpanded(dataIndex)}>
                   <Td/>
-                  <Td key={`${rowIndex}_0`} colSpan={this.props.columns.length+1} noPadding={true}>
+                  <Td key={`${rowIndex+1}_0`} colSpan={this.props.columns.length+1} noPadding={true}>
                     <ExpandableRowContent>
                       {this.props.expanded_content(dataItem)}
                     </ExpandableRowContent>

@@ -17,6 +17,8 @@ import { SimpleModal } from '@app/Components/SimpleModal';
 import { useEffect, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
 import { DataTable } from '@app/Components/DataTable';
+import { AppRoutesProps } from '@app/routes';
+import { AddAlertType } from '@app/index';
 
 interface OperatorContainer {
   name: string
@@ -41,6 +43,7 @@ interface Operator {
 
 class NewOperatorModal extends React.Component<
   {
+    addAlert: AddAlertType
   },
   {
     isModalOpen: boolean,
@@ -76,9 +79,18 @@ class NewOperatorModal extends React.Component<
           version: ""
           })
         })
-        .then(() => {
+        .then(response => {
+          if (!response.ok) {
+            throw Error(response.statusText)
+          }
           this.setState({
             isModalOpen: false
+          })
+        })
+        .catch(error => {
+          this.props.addAlert({
+            title: `Error updating operator: ${error.message}`,
+            variant: "danger",
           })
         })
       this.setState({
@@ -121,6 +133,7 @@ class NewOperatorModal extends React.Component<
 class OperatorActionsMenu extends React.Component<
   {
     namespace: string
+    addAlert: AddAlertType
   },
   {
     isOpen: boolean,
@@ -160,7 +173,18 @@ class OperatorActionsMenu extends React.Component<
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         }
-      }).then(() => { return })  // avoids warning
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw Error(response.statusText)
+        }
+      })
+      .catch(error => {
+        this.props.addAlert({
+          title: `Error deleting operator: ${error.message}`,
+          variant: "danger",
+        })
+      })
     }
     this.onDeleteModalClose = () => {
       this.setState({
@@ -209,13 +233,25 @@ class OperatorActionsMenu extends React.Component<
 }
 
 // eslint-disable-next-line prefer-const
-let Operators: React.FunctionComponent = () => {
+let Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [operators, setOperators] = useState(new Array<Operator>())
+  const addAlert = props.addAlert
   const fetchData = () => {
     fetch('/api/v1/operators')
-      .then(res => res.json())
+      .then(response => {
+        if (!response.ok) {
+          throw Error(response.statusText)
+        }
+        return response.json()
+      })
       .then(res => {
         setOperators(res as Operator[])
+      })
+      .catch(error => {
+          addAlert({
+            title: `Error retrieving operators: ${error.message}`,
+            variant: "danger",
+          })
       })
   }
   useEffect(() => {
@@ -224,7 +260,9 @@ let Operators: React.FunctionComponent = () => {
     return () => {
       clearInterval(timer)
     }
-  }, [])
+  },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [])
   return (
     <PageSection>
       <Split>
@@ -234,7 +272,7 @@ let Operators: React.FunctionComponent = () => {
           </Title>
         </SplitItem>
         <SplitItem>
-          <NewOperatorModal/>
+          <NewOperatorModal addAlert={addAlert}/>
         </SplitItem>
       </Split>
       <ExpandableTable
@@ -242,7 +280,8 @@ let Operators: React.FunctionComponent = () => {
         columns={['Name', 'Namespace', 'Conditions', 'Version']}
         column_fields={['name', 'namespace', 'conditions', 'version']}
         expanded_content={(data) => (
-          <ExpandableTable table_variant="compact"
+          <ExpandableTable
+            table_variant="compact"
             data={data.pods}
             columns={['Pod', 'Status', 'Version']}
             column_fields={['name', 'status', 'version']}
@@ -256,7 +295,7 @@ let Operators: React.FunctionComponent = () => {
           />
         )}
         action_menu={(data) => (
-          <OperatorActionsMenu namespace={data.namespace} />
+          <OperatorActionsMenu namespace={data.namespace} addAlert={addAlert}/>
         )}
       />
     </PageSection>

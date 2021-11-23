@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TableComposable, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ReactElement } from 'react';
 
 class DataTable extends React.Component<
@@ -13,7 +13,7 @@ class DataTable extends React.Component<
   {
   }> {
   render() {
-    const menuHeader = this.props.action_menu ? <Th key="menu"/> : ""
+    const menuHeader = this.props.action_menu ? <Th key="menu"/> : null
     const menuBody = (item: object): ReactElement|null => {
       if (this.props.action_menu) {
         return (
@@ -37,6 +37,7 @@ class DataTable extends React.Component<
             { menuHeader }
           </Tr>
         </Thead>
+        <Tbody>
         {
           this.props.data.map((dataItem, dataIndex) => {
             return (
@@ -53,6 +54,7 @@ class DataTable extends React.Component<
             )
           })
         }
+        </Tbody>
       </TableComposable>
     )
   }
