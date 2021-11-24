@@ -15,11 +15,12 @@ import {
 } from '@patternfly/react-core';
 import { NamespaceSelector } from '@app/Namespaces/Namespaces';
 import { SimpleModal } from '@app/Components/SimpleModal';
-import { useEffect, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
 import { DataTable } from '@app/Components/DataTable';
 import { AppRoutesProps } from '@app/routes';
 import { AddAlertType } from '@app/index';
+import { ToggleModal } from '@app/Components/ToggleModal';
 
 interface OperatorContainer {
   name: string
@@ -47,29 +48,21 @@ class NewOperatorModal extends React.Component<
     addAlert: AddAlertType
   },
   {
-    isModalOpen: boolean,
     selectedNamespace: string
   }> {
-  private readonly handleModalToggle: () => void;
-  private readonly onNamespaceSelect: (s: string) => void;
-  private readonly onDeployClick: () => void;
   constructor(props) {
     super(props)
     this.state = {
-      isModalOpen: false,
       selectedNamespace: ""
     }
-    this.handleModalToggle = () => {
-      this.setState(({ isModalOpen }) => ({
-        isModalOpen: !isModalOpen
-      }))
-    }
-    this.onNamespaceSelect = (s: string): void => {
+  }
+  renderModal = (isModalOpen: boolean, closeModal): ReactElement => {
+    const onNamespaceSelect = (s: string): void => {
       this.setState({
         selectedNamespace: s
       })
     }
-    this.onDeployClick = (): void => {
+    const onDeployClick = (): void => {
       fetch(`/api/v1/operators/${this.state.selectedNamespace}`, {
         method: 'PUT',
         headers: {
@@ -78,53 +71,46 @@ class NewOperatorModal extends React.Component<
         },
         body: JSON.stringify({
           version: ""
-          })
         })
-        .then(response => {
-          if (!response.ok) {
-            throw Error(response.statusText)
-          }
-          this.setState({
-            isModalOpen: false
-          })
-        })
-        .catch(error => {
-          this.props.addAlert(`Error updating operator: ${error.message}`, AlertVariant.danger)
-        })
-      this.setState({
-        isModalOpen: false
+      })
+      .then(response => {
+        closeModal()
+        if (!response.ok) {
+          throw Error(response.statusText)
+        }
+      })
+      .catch(error => {
+        closeModal()
+        this.props.addAlert(`Error updating operator: ${error.message}`, AlertVariant.danger)
       })
     }
+    return (
+      <Modal
+        title="Deploy ClickHouse Operator"
+        variant={ModalVariant.small}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        actions={[
+          <Button key="deploy" variant="primary"
+                  onClick={onDeployClick} isDisabled={this.state.selectedNamespace === ""}>
+            Deploy
+          </Button>,
+          <Button key="cancel" variant="link" onClick={closeModal}>
+            Cancel
+          </Button>
+        ]}
+      >
+        <div>
+          Select a Namespace:
+        </div>
+        <NamespaceSelector onSelect={onNamespaceSelect}/>
+      </Modal>
+    )
   }
   render() {
-    const { isModalOpen } = this.state;
     return (
-      <React.Fragment>
-        <Button variant="primary" onClick={this.handleModalToggle}>
-          +
-        </Button>
-        <Modal
-          title="Deploy ClickHouse Operator"
-          variant={ModalVariant.small}
-          isOpen={isModalOpen}
-          onClose={this.handleModalToggle}
-          actions={[
-            <Button key="deploy" variant="primary"
-                    onClick={this.onDeployClick} isDisabled={this.state.selectedNamespace === ""}>
-              Deploy
-            </Button>,
-            <Button key="cancel" variant="link" onClick={this.handleModalToggle}>
-              Cancel
-            </Button>
-          ]}
-        >
-          <div>
-          Select a Namespace:
-          </div>
-          <NamespaceSelector onSelect={this.onNamespaceSelect}/>
-        </Modal>
-      </React.Fragment>
-    );
+      <ToggleModal modal={this.renderModal} />
+    )
   }
 }
 
