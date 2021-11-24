@@ -7,8 +7,7 @@
   "scripts": {
     "devel": "concurrently \"../adash -devmode\" \"npm run start:dev\"",
     "prebuild": "npm run clean",
-    "dr:surge": "node dr-surge.js",
-    "build": "webpack --config webpack.prod.js && npm run dr:surge",
+    "build": "webpack --config webpack.prod.js",
     "start": "sirv dist --cors --single --host --port 8080",
     "start:dev": "webpack serve --color --progress --config webpack.dev.js",
     "test": "jest --watch",
@@ -51,7 +50,7 @@
     "prop-types": "^15.7.2",
     "raw-loader": "^4.0.2",
     "react-axe": "^3.5.4",
-    "react-docgen-typescript-loader": "^3.7.2",
+    "react-docgen-typescript-loader": "^2.2.0",
     "react-router-dom": "^5.3.0",
     "regenerator-runtime": "^0.13.7",
     "rimraf": "^3.0.2",
