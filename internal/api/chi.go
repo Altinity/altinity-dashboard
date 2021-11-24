@@ -15,6 +15,12 @@ import (
 type ChiResource struct {
 }
 
+// ChiPutParams is the object for parameters to a CHI PUT request
+type ChiPutParams struct {
+	Namespace string `json:"namespace" description:"namespace to deploy the CHI to"`
+	YAML      string `json:"yaml" description:"YAML of the CHI custom resource"`
+}
+
 // WebService creates a new service that can handle REST requests
 func (c *ChiResource) WebService() *restful.WebService {
 	ws := new(restful.WebService)
@@ -28,6 +34,18 @@ func (c *ChiResource) WebService() *restful.WebService {
 		Doc("get all ClickHouse Installations").
 		Writes([]Chi{}).
 		Returns(200, "OK", []Chi{}))
+
+	ws.Route(ws.PUT("").To(c.handlePut).
+		// docs
+		Doc("deploy a ClickHouse Installation").
+		Reads(ChiPutParams{}).
+		Returns(200, "OK", nil))
+
+	ws.Route(ws.DELETE("/{chi-name}").To(c.handleDelete).
+		// docs
+		Doc("delete a ClickHouse installation").
+		Param(ws.PathParameter("chi-name", "ClickHouse Installation to delete").DataType("string")).
+		Returns(200, "OK", nil))
 
 	return ws
 }
@@ -58,6 +76,33 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	_ = response.WriteEntity(list)
 }
 
+// PUT http://localhost:8080/chis
+func (c *ChiResource) handlePut(request *restful.Request, response *restful.Response) {
+	putParams := ChiPutParams{}
+	err := request.ReadEntity(&putParams)
+	if err != nil {
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	err = k8s.GetK8s().DoApply(putParams.YAML, putParams.Namespace)
+	if err != nil {
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+	_ = response.WriteEntity(nil)
+}
+
+// DELETE http://localhost:8080/chis
+func (c *ChiResource) handleDelete(request *restful.Request, response *restful.Response) {
+	chiName := request.PathParameter("chi-name")
+	if chiName == "" {
+		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "chi-name is required"})
+		return
+	}
+	_ = response.WriteError(http.StatusNotImplemented, restful.ServiceError{Message: "Not Implemented"})
+}
+
 func init() {
+	// Register the ClickHouse CRD structs with client-go
 	_ = chopapi.AddToScheme(scheme.Scheme)
 }

@@ -124,11 +124,9 @@ func main() {
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
 	rc.Add(restfulspec.NewOpenAPIService(config))
 
-	// Create FileServer for the UI assets
+	// Create handler for the UI assets
 	subFiles, _ := fs.Sub(uiFiles, "ui/dist")
 	subServer := http.FileServer(http.FS(subFiles))
-
-	// Set up handler for http requests
 	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if (r.URL.Path == "/") ||
 			(r.URL.Path == "/index.html") ||
@@ -140,6 +138,11 @@ func main() {
 			subServer.ServeHTTP(w, r)
 		}
 	})
+
+	// Create handler for the CHI examples
+	subFilesChi, _ := fs.Sub(uiFiles, "embed/chi-examples")
+	subServerChi := http.FileServer(http.FS(subFilesChi))
+	httpMux.Handle("/chi-examples", subServerChi)
 
 	// Start the server
 	bindStr := fmt.Sprintf("%s:%s", *bindHost, *bindPort)

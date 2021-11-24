@@ -211,9 +211,9 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 
 	k := k8s.GetK8s()
 	if doDelete {
-		err = k.DoDelete(deploy)
+		err = k.DoDelete(deploy, "")
 	} else {
-		err = k.DoApply(deploy)
+		err = k.DoApply(deploy, "")
 	}
 	if err != nil {
 		return err

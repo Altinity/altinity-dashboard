@@ -23,7 +23,7 @@ linters:
     # - gci
     # - gochecknoglobals
     # - gochecknoinits
-    - gocognit
+    # - gocognit
     - gocritic
     # - gocyclo
     # - godot

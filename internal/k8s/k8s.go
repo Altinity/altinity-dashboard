@@ -75,7 +75,7 @@ var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONSc
 
 // doApplyOrDelete does a server-side apply or delete of a given YAML string
 // Adapted from https://ymmt2005.hatenablog.com/entry/2020/04/14/An_example_of_using_dynamic_client_of_k8s.io/client-go
-func (i *Info) doApplyOrDelete(yaml string, doDelete bool) error {
+func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool) error {
 	multiDocReader := utilyaml.NewYAMLReader(bufio.NewReader(strings.NewReader(yaml)))
 	yamlDocs := make([][]byte, 0)
 	for {
@@ -121,7 +121,11 @@ func (i *Info) doApplyOrDelete(yaml string, doDelete bool) error {
 		var dr dynamic.ResourceInterface
 		if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
 			// namespaced resources should specify the namespace
-			dr = dyn.Resource(mapping.Resource).Namespace(obj.GetNamespace())
+			if namespace == "" {
+				dr = dyn.Resource(mapping.Resource).Namespace(obj.GetNamespace())
+			} else {
+				dr = dyn.Resource(mapping.Resource).Namespace(namespace)
+			}
 		} else {
 			// for cluster-wide resources
 			dr = dyn.Resource(mapping.Resource)
@@ -154,11 +158,11 @@ func (i *Info) doApplyOrDelete(yaml string, doDelete bool) error {
 }
 
 // DoApply does a server-side apply of a given YAML string
-func (i *Info) DoApply(yaml string) error {
-	return i.doApplyOrDelete(yaml, false)
+func (i *Info) DoApply(yaml string, namespace string) error {
+	return i.doApplyOrDelete(yaml, namespace, false)
 }
 
 // DoDelete deletes the resources identified in a given YAML string
-func (i *Info) DoDelete(yaml string) error {
-	return i.doApplyOrDelete(yaml, true)
+func (i *Info) DoDelete(yaml string, namespace string) error {
+	return i.doApplyOrDelete(yaml, namespace, true)
 }
