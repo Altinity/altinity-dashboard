@@ -52,20 +52,17 @@ func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService,
 		Produces(restful.MIME_JSON)
 
 	ws.Route(ws.GET("").To(o.handleGet).
-		// docs
 		Doc("get all operators").
 		Writes([]Operator{}).
 		Returns(200, "OK", []Operator{}))
 
 	ws.Route(ws.PUT("/{namespace}").To(o.handlePut).
-		// docs
 		Doc("deploy an operator").
 		Param(ws.PathParameter("namespace", "namespace to deploy to").DataType("string")).
 		Reads(OperatorPutParams{}).
 		Returns(200, "OK", Operator{}))
 
 	ws.Route(ws.DELETE("/{namespace}").To(o.handleDelete).
-		// docs
 		Doc("delete an operator").
 		Param(ws.PathParameter("namespace", "namespace to delete from").DataType("string")).
 		Returns(200, "OK", nil))

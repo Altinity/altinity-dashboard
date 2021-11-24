@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	chopclientset "github.com/altinity/clickhouse-operator/pkg/client/clientset/versioned"
 	"io"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,8 +26,9 @@ import (
 )
 
 type Info struct {
-	Config    *rest.Config
-	Clientset *kubernetes.Clientset
+	Config        *rest.Config
+	Clientset     *kubernetes.Clientset
+	ChopClientset *chopclientset.Clientset
 }
 
 var globalK8s *Info
@@ -56,9 +58,15 @@ func InitK8s(kubeconfig string) error {
 		return err
 	}
 
+	chopClientset, err := chopclientset.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
 	globalK8s = &Info{
-		Config:    config,
-		Clientset: clientset,
+		Config:        config,
+		Clientset:     clientset,
+		ChopClientset: chopClientset,
 	}
 
 	return nil

@@ -22,13 +22,11 @@ func (n *NamespaceResource) WebService() *restful.WebService {
 		Produces(restful.MIME_JSON)
 
 	ws.Route(ws.GET("").To(n.getNamespaces).
-		// docs
 		Doc("get all namespaces").
 		Writes([]Namespace{}).
 		Returns(200, "OK", []Namespace{}))
 
 	ws.Route(ws.PUT("").To(n.createNamespace).
-		// docs
 		Doc("create a namespace").
 		Reads(Namespace{})) // from the request
 

@@ -3,11 +3,9 @@ package api
 import (
 	"context"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
-	chopapi "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	chopclientset "github.com/altinity/clickhouse-operator/pkg/client/clientset/versioned"
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"net/http"
 )
 
@@ -21,6 +19,12 @@ type ChiPutParams struct {
 	YAML      string `json:"yaml" description:"YAML of the CHI custom resource"`
 }
 
+// ChiDeleteParams is the object for parameters to a CHI DELETE request
+type ChiDeleteParams struct {
+	Namespace string `json:"namespace" description:"namespace to delete the CHI from"`
+	ChiName   string `json:"chi-name" description:"name op the CHI to delete"`
+}
+
 // WebService creates a new service that can handle REST requests
 func (c *ChiResource) WebService() *restful.WebService {
 	ws := new(restful.WebService)
@@ -29,22 +33,21 @@ func (c *ChiResource) WebService() *restful.WebService {
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
+	// This is not very RESTful - the PUT and DELETE ought to take path parameters.
+
 	ws.Route(ws.GET("").To(c.getCHIs).
-		// docs
 		Doc("get all ClickHouse Installations").
 		Writes([]Chi{}).
 		Returns(200, "OK", []Chi{}))
 
 	ws.Route(ws.PUT("").To(c.handlePut).
-		// docs
-		Doc("deploy a ClickHouse Installation").
+		Doc("deploy a ClickHouse Installation from YAML").
 		Reads(ChiPutParams{}).
 		Returns(200, "OK", nil))
 
-	ws.Route(ws.DELETE("/{chi-name}").To(c.handleDelete).
-		// docs
+	ws.Route(ws.DELETE("").To(c.handleDelete).
 		Doc("delete a ClickHouse installation").
-		Param(ws.PathParameter("chi-name", "ClickHouse Installation to delete").DataType("string")).
+		Reads(ChiDeleteParams{}).
 		Returns(200, "OK", nil))
 
 	return ws
@@ -94,15 +97,30 @@ func (c *ChiResource) handlePut(request *restful.Request, response *restful.Resp
 
 // DELETE http://localhost:8080/chis
 func (c *ChiResource) handleDelete(request *restful.Request, response *restful.Response) {
-	chiName := request.PathParameter("chi-name")
-	if chiName == "" {
+	deleteParams := ChiDeleteParams{}
+	err := request.ReadEntity(&deleteParams)
+	if err != nil {
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	if deleteParams.ChiName == "" {
 		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "chi-name is required"})
 		return
 	}
-	_ = response.WriteError(http.StatusNotImplemented, restful.ServiceError{Message: "Not Implemented"})
-}
 
-func init() {
-	// Register the ClickHouse CRD structs with client-go
-	_ = chopapi.AddToScheme(scheme.Scheme)
+	if deleteParams.Namespace == "" {
+		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "namespace is required"})
+		return
+	}
+
+	err = k8s.GetK8s().ChopClientset.ClickhouseV1().
+		ClickHouseInstallations(deleteParams.Namespace).
+		Delete(context.TODO(), deleteParams.ChiName, metav1.DeleteOptions{})
+	if err != nil {
+		_ = response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	_ = response.WriteEntity(nil)
 }
