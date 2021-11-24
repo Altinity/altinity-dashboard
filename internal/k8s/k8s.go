@@ -141,6 +141,10 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool) err
 			dr = dyn.Resource(mapping.Resource).Namespace(finalNamespace)
 		} else {
 			// for cluster-wide resources
+			if doDelete && namespace != "" {
+				// don't delete cluster-wide resources if delete is namespace scoped
+				continue
+			}
 			dr = dyn.Resource(mapping.Resource)
 		}
 
