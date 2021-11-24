@@ -1,26 +1,27 @@
 import * as React from 'react';
 import {
-  AlertVariant,
+  AlertVariant, Bullseye,
   Button,
   ButtonVariant,
   Dropdown,
-  DropdownItem,
+  DropdownItem, Grid, GridItem,
   KebabToggle,
   Modal,
   ModalVariant,
   PageSection,
   Split,
-  SplitItem,
+  SplitItem, TextInput,
   Title
 } from '@patternfly/react-core';
 import { NamespaceSelector } from '@app/Namespaces/Namespaces';
 import { SimpleModal } from '@app/Components/SimpleModal';
-import { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
 import { DataTable } from '@app/Components/DataTable';
 import { AppRoutesProps } from '@app/routes';
 import { AddAlertType } from '@app/index';
-import { ToggleModal } from '@app/Components/ToggleModal';
+import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
+import chopLogo from '@app/images/altinity-clickhouse-operator-kubernetes.jpg';
 
 interface OperatorContainer {
   name: string
@@ -43,36 +44,21 @@ interface Operator {
   pods: Array<OperatorPod>
 }
 
-class NewOperatorModal extends React.Component<
-  {
-    addAlert: AddAlertType
-  },
-  {
-    selectedNamespace: string
-  }> {
-  constructor(props) {
-    super(props)
-    this.state = {
-      selectedNamespace: ""
-    }
-  }
-  renderModal = (isModalOpen: boolean, closeModal): ReactElement => {
-    const onNamespaceSelect = (s: string): void => {
-      this.setState({
-        selectedNamespace: s
+const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (props: ToggleModalSubProps) => {
+  const {addAlert, isModalOpen, closeModal} = props
+  const [selectedVersion, setSelectedVersion] = useState("")
+  const [selectedNamespace, setSelectedNamespace] = useState("")
+  const onDeployClick = (): void => {
+    fetch(`/api/v1/operators/${selectedNamespace}`, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        version: selectedVersion
       })
-    }
-    const onDeployClick = (): void => {
-      fetch(`/api/v1/operators/${this.state.selectedNamespace}`, {
-        method: 'PUT',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          version: ""
-        })
-      })
+    })
       .then(response => {
         closeModal()
         if (!response.ok) {
@@ -81,37 +67,52 @@ class NewOperatorModal extends React.Component<
       })
       .catch(error => {
         closeModal()
-        this.props.addAlert(`Error updating operator: ${error.message}`, AlertVariant.danger)
+        addAlert(`Error updating operator: ${error.message}`, AlertVariant.danger)
       })
-    }
-    return (
-      <Modal
-        title="Deploy ClickHouse Operator"
-        variant={ModalVariant.small}
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        actions={[
-          <Button key="deploy" variant="primary"
-                  onClick={onDeployClick} isDisabled={this.state.selectedNamespace === ""}>
-            Deploy
-          </Button>,
-          <Button key="cancel" variant="link" onClick={closeModal}>
-            Cancel
-          </Button>
-        ]}
-      >
-        <div>
+  }
+  return (
+    <Modal
+      title="Deploy ClickHouse Operator"
+      variant={ModalVariant.small}
+      isOpen={isModalOpen}
+      onClose={closeModal}
+      position="top"
+      actions={[
+        <Button key="deploy" variant="primary"
+                onClick={onDeployClick} isDisabled={selectedNamespace === ""}>
+          Deploy
+        </Button>,
+        <Button key="cancel" variant="link" onClick={closeModal}>
+          Cancel
+        </Button>
+      ]}
+    >
+      <Grid hasGutter={true}>
+        <GridItem span={7}>
+          <div>
+            Version (leave blank for latest):
+          </div>
+          <TextInput
+            value={selectedVersion}
+            type="text"
+            onChange={setSelectedVersion}
+          />
+        </GridItem>
+        <GridItem span={5} rowSpan={2}>
+          <Bullseye>
+            <img
+              src={chopLogo}
+              alt="Altinity ClickHouse Operator Logo"
+            />
+          </Bullseye>
+        </GridItem>
+        <GridItem span={7}>
           Select a Namespace:
-        </div>
-        <NamespaceSelector onSelect={onNamespaceSelect}/>
-      </Modal>
-    )
-  }
-  render() {
-    return (
-      <ToggleModal modal={this.renderModal} />
-    )
-  }
+          <NamespaceSelector onSelect={setSelectedNamespace}/>
+        </GridItem>
+      </Grid>
+    </Modal>
+  )
 }
 
 class OperatorActionsMenu extends React.Component<
@@ -173,7 +174,7 @@ class OperatorActionsMenu extends React.Component<
       })
     }
     this.onUpgradeClick = () => {
-      console.log("Upgrade clicked")
+      this.props.addAlert("Not implemented yet", AlertVariant.warning)
     }
   }
 
@@ -213,8 +214,7 @@ class OperatorActionsMenu extends React.Component<
   }
 }
 
-// eslint-disable-next-line prefer-const
-let Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
+const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [operators, setOperators] = useState(new Array<Operator>())
   const addAlert = props.addAlert
   const fetchData = () => {
@@ -250,7 +250,7 @@ let Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps)
           </Title>
         </SplitItem>
         <SplitItem>
-          <NewOperatorModal addAlert={addAlert}/>
+          <ToggleModal addAlert={addAlert} modal={NewOperatorModal}/>
         </SplitItem>
       </Split>
       <ExpandableTable

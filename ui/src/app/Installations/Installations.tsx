@@ -53,6 +53,7 @@ class NewCHIModal extends React.Component<
         variant={ModalVariant.small}
         isOpen={isModalOpen}
         onClose={closeModal}
+        position="top"
         actions={[
           <Button key="deploy" variant="primary"
                   onClick={onDeployClick} isDisabled={this.state.selectedNamespace === ""}>

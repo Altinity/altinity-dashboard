@@ -1,40 +1,31 @@
 import * as React from 'react';
 import { Button } from '@patternfly/react-core';
-import { ReactElement } from 'react';
+import { AppRoutesProps } from '@app/routes';
+import { useState } from 'react';
 
-export class ToggleModal extends React.Component<
-  {
-    modal: (isModalOpen: boolean, closeModal: () => void) => ReactElement
-  },
-  {
-    isModalOpen: boolean,
-  }> {
-  private readonly handleModalToggle: () => void;
-  private readonly closeModal: () => void;
-  constructor(props) {
-    super(props)
-    this.state = {
-      isModalOpen: false,
-    }
-    this.handleModalToggle = () => {
-      this.setState(({ isModalOpen }) => ({
-        isModalOpen: !isModalOpen
-      }))
-    }
-    this.closeModal = () => {
-      this.setState({
-        isModalOpen: false
-      })
-    }
-  }
-  render() {
-    return (
-      <React.Fragment>
-        <Button variant="primary" onClick={this.handleModalToggle}>
-          +
-        </Button>
-        {this.props.modal(this.state.isModalOpen, this.closeModal)}
-      </React.Fragment>
-    );
-  }
+// ToggleModalProps are the properties of the ToggleModal component
+export interface ToggleModalProps extends AppRoutesProps {
+  modal: React.FunctionComponent<ToggleModalSubProps>
+}
+
+// ToggleModalSubProps are the properties of the Modal within the ToggleModal component
+export interface ToggleModalSubProps extends AppRoutesProps {
+  isModalOpen: boolean
+  closeModal: () => void
+}
+
+export const ToggleModal: React.FunctionComponent<ToggleModalProps> = (props: ToggleModalProps) => {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  return (
+    <React.Fragment>
+      <Button variant="primary" onClick={() => setIsModalOpen(!isModalOpen)}>
+        +
+      </Button>
+      {props.modal({
+        addAlert: props.addAlert,
+        isModalOpen: isModalOpen,
+        closeModal: () => { setIsModalOpen(false) },
+      })}
+    </React.Fragment>
+  )
 }
