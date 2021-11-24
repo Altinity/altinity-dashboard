@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  AlertVariant,
   Button,
   ButtonVariant,
   Dropdown,
@@ -88,10 +89,7 @@ class NewOperatorModal extends React.Component<
           })
         })
         .catch(error => {
-          this.props.addAlert({
-            title: `Error updating operator: ${error.message}`,
-            variant: "danger",
-          })
+          this.props.addAlert(`Error updating operator: ${error.message}`, AlertVariant.danger)
         })
       this.setState({
         isModalOpen: false
@@ -180,10 +178,7 @@ class OperatorActionsMenu extends React.Component<
         }
       })
       .catch(error => {
-        this.props.addAlert({
-          title: `Error deleting operator: ${error.message}`,
-          variant: "danger",
-        })
+        this.props.addAlert(`Error deleting operator: ${error.message}`, AlertVariant.danger)
       })
     }
     this.onDeleteModalClose = () => {
@@ -248,10 +243,7 @@ let Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps)
         setOperators(res as Operator[])
       })
       .catch(error => {
-          addAlert({
-            title: `Error retrieving operators: ${error.message}`,
-            variant: "danger",
-          })
+          addAlert(`Error retrieving operators: ${error.message}`, AlertVariant.danger)
       })
   }
   useEffect(() => {

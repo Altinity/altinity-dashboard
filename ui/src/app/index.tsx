@@ -7,21 +7,18 @@ import '@app/app.css';
 import { Alert, AlertActionCloseButton, AlertGroup, AlertVariant } from '@patternfly/react-core';
 import { useState } from 'react';
 
-export interface AlertData {
+interface AlertData {
   title: string
-  variant: string
-}
-
-interface AlertDataInternal extends AlertData {
+  variant: AlertVariant
   key: number
 }
 
-export type AddAlertType = (data: AlertData) => void
+export type AddAlertType = (title: string, variant: AlertVariant) => void
 
 const App: React.FunctionComponent = () => {
-  const [alerts, setAlerts] = useState(new Array<AlertDataInternal>())
-  const addAlert: AddAlertType = (data: AlertData): void => {
-    setAlerts([...alerts, {title: data.title, variant: data.variant, key: new Date().getTime()}])
+  const [alerts, setAlerts] = useState(new Array<AlertData>())
+  const addAlert: AddAlertType = (title: string, variant: AlertVariant): void => {
+    setAlerts([...alerts, {title: title, variant: variant, key: new Date().getTime()}])
   }
   const removeAlert = (key: number): void => {
     setAlerts([...alerts.filter(a => a.key !== key)])

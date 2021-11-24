@@ -8,7 +8,8 @@ import { useDocumentTitle } from '@app/utils/useDocumentTitle';
 import { LastLocationProvider, useLastLocation } from 'react-router-last-location';
 import { Installations } from '@app/Installations/Installations';
 import { Devel } from '@app/Devel/Devel';
-import { AddAlertType, AlertData } from '@app/index';
+import { AddAlertType } from '@app/index';
+import { AlertVariant } from '@patternfly/react-core';
 
 let routeFocusTimer: number;
 export interface IAppRoute {
@@ -109,7 +110,7 @@ const flattenedRoutes: IAppRoute[] = routes.reduce(
 );
 
 export interface AppRoutesProps {
-  addAlert: (data: AlertData) => void
+  addAlert: (title: string, variant: AlertVariant) => void
 }
 
 const AppRoutes = (props: AppRoutesProps): React.ReactElement => (
