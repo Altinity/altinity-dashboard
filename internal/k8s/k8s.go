@@ -73,6 +73,9 @@ func GetK8s() *Info {
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
+var errNoNamespace = errors.New("could not determine namespace for namespace-scoped entity")
+var errNamespaceConflict = errors.New("provided namespace conflicts with YAML object")
+
 // doApplyOrDelete does a server-side apply or delete of a given YAML string
 // Adapted from https://ymmt2005.hatenablog.com/entry/2020/04/14/An_example_of_using_dynamic_client_of_k8s.io/client-go
 func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool) error {
@@ -121,11 +124,21 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool) err
 		var dr dynamic.ResourceInterface
 		if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
 			// namespaced resources should specify the namespace
-			if namespace == "" {
-				dr = dyn.Resource(mapping.Resource).Namespace(obj.GetNamespace())
-			} else {
-				dr = dyn.Resource(mapping.Resource).Namespace(namespace)
+			var finalNamespace string
+			objNamespace := obj.GetNamespace()
+			switch {
+			case namespace == "" && objNamespace == "":
+				return errNoNamespace
+			case namespace == "":
+				finalNamespace = objNamespace
+			case objNamespace == "":
+				finalNamespace = namespace
+			case namespace != objNamespace:
+				return errNamespaceConflict
+			default:
+				finalNamespace = namespace
 			}
+			dr = dyn.Resource(mapping.Resource).Namespace(finalNamespace)
 		} else {
 			// for cluster-wide resources
 			dr = dyn.Resource(mapping.Resource)
