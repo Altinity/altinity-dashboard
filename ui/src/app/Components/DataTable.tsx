@@ -1,26 +1,23 @@
 import * as React from 'react';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ReactElement } from 'react';
+import { TdActionsType } from '@patternfly/react-table/dist/js/components/Table/base';
 
 class DataTable extends React.Component<
   {
     data: Array<object>
     columns: Array<string>
     column_fields: Array<string>
-    action_menu?: (object) => ReactElement
+    actions?: (object) => TdActionsType
     table_variant?: "compact"
   },
   {
   }> {
   render() {
-    const menuHeader = this.props.action_menu ? <Th key="menu"/> : null
+    const menuHeader = this.props.actions ? <Th key="menu"/> : null
     const menuBody = (item: object): ReactElement|null => {
-      if (this.props.action_menu) {
-        return (
-          <Td noPadding={true}>
-            {this.props.action_menu(item)}
-          </Td>
-        )
+      if (this.props.actions) {
+        return (<Td actions={this.props.actions(item)}/>)
       } else {
         return null
       }

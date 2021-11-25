@@ -21,7 +21,7 @@ type ChiPutParams struct {
 // ChiDeleteParams is the object for parameters to a CHI DELETE request
 type ChiDeleteParams struct {
 	Namespace string `json:"namespace" description:"namespace to delete the CHI from"`
-	ChiName   string `json:"chi-name" description:"name op the CHI to delete"`
+	ChiName   string `json:"chi_name" description:"name op the CHI to delete"`
 }
 
 // WebService creates a new service that can handle REST requests

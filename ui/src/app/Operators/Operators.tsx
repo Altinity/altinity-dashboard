@@ -3,9 +3,7 @@ import {
   AlertVariant, Bullseye,
   Button,
   ButtonVariant,
-  Dropdown,
-  DropdownItem, Grid, GridItem,
-  KebabToggle,
+  Grid, GridItem,
   Modal,
   ModalVariant,
   PageSection,
@@ -19,7 +17,6 @@ import { useEffect, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
 import { DataTable } from '@app/Components/DataTable';
 import { AppRoutesProps } from '@app/routes';
-import { AddAlertType } from '@app/index';
 import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
 import chopLogo from '@app/images/altinity-clickhouse-operator-kubernetes.jpg';
 
@@ -45,9 +42,15 @@ interface Operator {
 }
 
 const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (props: ToggleModalSubProps) => {
-  const {addAlert, isModalOpen, closeModal} = props
+  const {addAlert, isModalOpen} = props
+  const outerCloseModal = props.closeModal
   const [selectedVersion, setSelectedVersion] = useState("")
   const [selectedNamespace, setSelectedNamespace] = useState("")
+  const closeModal = (): void => {
+    setSelectedVersion("")
+    setSelectedNamespace("")
+    outerCloseModal()
+  }
   const onDeployClick = (): void => {
     fetch(`/api/v1/operators/${selectedNamespace}`, {
       method: 'PUT',
@@ -115,107 +118,10 @@ const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (props: T
   )
 }
 
-class OperatorActionsMenu extends React.Component<
-  {
-    namespace: string
-    addAlert: AddAlertType
-  },
-  {
-    isOpen: boolean,
-    isDeleteModalOpen: boolean,
-  }> {
-  private readonly onToggle: (boolean) => void;
-  private readonly onSelect: () => void;
-  private readonly onDeleteClick: () => void;
-  private readonly onDeleteActionClick: () => void;
-  private readonly onDeleteModalClose: () => void;
-  private readonly onUpgradeClick: () => void;
-  constructor(props) {
-    super(props)
-    this.state = {
-      isOpen: false,
-      isDeleteModalOpen: false
-    }
-    this.onToggle = isOpen => {
-      this.setState({
-        isOpen
-      })
-    }
-    this.onSelect = () => {
-      this.setState({
-        isOpen: !this.state.isOpen
-      })
-    }
-    this.onDeleteClick = () => {
-      this.setState({
-        isDeleteModalOpen: true
-      })
-    }
-    this.onDeleteActionClick = () => {
-      fetch(`/api/v1/operators/${this.props.namespace}`, {
-        method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw Error(response.statusText)
-        }
-      })
-      .catch(error => {
-        this.props.addAlert(`Error deleting operator: ${error.message}`, AlertVariant.danger)
-      })
-    }
-    this.onDeleteModalClose = () => {
-      this.setState({
-        isDeleteModalOpen: false
-      })
-    }
-    this.onUpgradeClick = () => {
-      this.props.addAlert("Not implemented yet", AlertVariant.warning)
-    }
-  }
-
-  render() {
-    const { isOpen } = this.state;
-    const dropdownItems = [
-      <DropdownItem key="upgrade" component="button" onClick={this.onUpgradeClick}>
-        Upgrade
-      </DropdownItem>,
-      <DropdownItem key="delete" component="button" onClick={this.onDeleteClick}>
-        Delete
-      </DropdownItem>
-    ];
-    return (
-      <React.Fragment>
-        <SimpleModal
-          title="Delete ClickHouse Operator?"
-          positionTop={true}
-          actionButtonText="Delete"
-          actionButtonVariant={ButtonVariant.danger}
-          isModalOpen={this.state.isDeleteModalOpen}
-          onActionClick={this.onDeleteActionClick}
-          onClose={this.onDeleteModalClose}
-        >
-        The operator will be removed from the <b>{this.props.namespace}</b> namespace.
-        </SimpleModal>
-        <Dropdown
-          onSelect={this.onSelect}
-          toggle={<KebabToggle onToggle={this.onToggle} />}
-          isOpen={isOpen}
-          isPlain
-          dropdownItems={dropdownItems}
-          position="right"
-        />
-      </React.Fragment>
-    );
-  }
-}
-
 const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [operators, setOperators] = useState(new Array<Operator>())
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<Operator|undefined>(undefined)
   const addAlert = props.addAlert
   const fetchData = () => {
     fetch('/api/v1/operators')
@@ -241,8 +147,50 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
   },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   [])
+  const onDeleteClick = (item: Operator) => {
+    setItemToDelete(item)
+    setIsDeleteModalOpen(true)
+  }
+  const onDeleteActionClick = () => {
+    if (itemToDelete === undefined) {
+      return
+    }
+    fetch(`/api/v1/operators/${itemToDelete.namespace}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw Error(response.statusText)
+        }
+      })
+      .catch(error => {
+        addAlert(`Error deleting operator: ${error.message}`, AlertVariant.danger)
+      })
+  }
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false)
+    setItemToDelete(undefined)
+  }
+  const onUpgradeClick = (item: Operator) => {
+    addAlert(`Upgrade of ${item.name} not implemented yet`, AlertVariant.warning)
+  }
   return (
     <PageSection>
+      <SimpleModal
+        title="Delete ClickHouse Operator?"
+        positionTop={true}
+        actionButtonText="Delete"
+        actionButtonVariant={ButtonVariant.danger}
+        isModalOpen={isDeleteModalOpen}
+        onActionClick={onDeleteActionClick}
+        onClose={closeDeleteModal}
+      >
+        The operator will be removed from the <b>{itemToDelete ? itemToDelete.namespace : "UNKNOWN"}</b> namespace.
+      </SimpleModal>
       <Split>
         <SplitItem isFilled>
           <Title headingLevel="h1" size="lg">
@@ -257,6 +205,22 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
         data={operators}
         columns={['Name', 'Namespace', 'Conditions', 'Version']}
         column_fields={['name', 'namespace', 'conditions', 'version']}
+        actions={(item: Operator) => {
+          return {
+            items: [
+              {
+                title: "Upgrade",
+                variant: "primary",
+                onClick: () => {onUpgradeClick(item)}
+              },
+              {
+                title: "Delete",
+                variant: "danger",
+                onClick: () => {onDeleteClick(item)}
+              },
+            ]
+          }
+        }}
         expanded_content={(data) => (
           <ExpandableTable
             table_variant="compact"
@@ -271,9 +235,6 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
               />
             )}
           />
-        )}
-        action_menu={(data) => (
-          <OperatorActionsMenu namespace={data.namespace} addAlert={addAlert}/>
         )}
       />
     </PageSection>

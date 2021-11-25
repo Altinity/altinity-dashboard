@@ -6,7 +6,7 @@ import { Operators } from '@app/Operators/Operators';
 import { NotFound } from '@app/NotFound/NotFound';
 import { useDocumentTitle } from '@app/utils/useDocumentTitle';
 import { LastLocationProvider, useLastLocation } from 'react-router-last-location';
-import { Installations } from '@app/Installations/Installations';
+import { CHIs } from '@app/CHIs/CHIs';
 import { Devel } from '@app/Devel/Devel';
 import { AddAlertType } from '@app/index';
 import { AlertVariant } from '@patternfly/react-core';
@@ -50,7 +50,7 @@ const routes: AppRouteConfig[] = [
     title: 'Altinity Dashboard | ClickHouse Operators',
   },
   {
-    component: Installations,
+    component: CHIs,
     exact: true,
     isAsync: true,
     label: 'ClickHouse Installations',
