@@ -10,11 +10,10 @@ import {
   Title
 } from '@patternfly/react-core';
 import { AppRoutesProps } from '@app/routes';
-import { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DataTable } from '@app/Components/DataTable';
-import { AddAlertType } from '@app/index';
 import { NamespaceSelector } from '@app/Namespaces/Namespaces';
-import { ToggleModal } from '@app/Components/ToggleModal';
+import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
 
 interface CHI {
   name: string
@@ -24,62 +23,40 @@ interface CHI {
   Hosts: bigint
 }
 
-class NewCHIModal extends React.Component<
-  {
-    addAlert: AddAlertType
-  },
-  {
-    selectedNamespace: string
-  }> {
-  constructor(props) {
-    super(props)
-    this.state = {
-      selectedNamespace: ""
-    }
+const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props: ToggleModalSubProps) => {
+  const { addAlert, isModalOpen, closeModal } = props
+  const [selectedNamespace, setSelectedNamespace] = useState("")
+  const onDeployClick = (): void => {
+    closeModal()
+    addAlert("Not implemented yet", AlertVariant.warning)
   }
-  renderModal = (isModalOpen: boolean, closeModal): ReactElement => {
-    const onNamespaceSelect = (s: string): void => {
-      this.setState({
-        selectedNamespace: s
-      })
-    }
-    const onDeployClick = (): void => {
-      closeModal()
-      this.props.addAlert("Not implemented yet", AlertVariant.warning)
-    }
-    return (
-      <Modal
-        title="Deploy ClickHouse Installation"
-        variant={ModalVariant.small}
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        position="top"
-        actions={[
-          <Button key="deploy" variant="primary"
-                  onClick={onDeployClick} isDisabled={this.state.selectedNamespace === ""}>
-            Deploy
-          </Button>,
-          <Button key="cancel" variant="link" onClick={closeModal}>
-            Cancel
-          </Button>
-        ]}
-      >
-        <div>
-          Select a Namespace:
-        </div>
-        <NamespaceSelector onSelect={onNamespaceSelect}/>
-      </Modal>
-    )
-  }
-  render() {
-    return (
-      <ToggleModal modal={this.renderModal} />
-    )
-  }
+  return (
+    <Modal
+      title="Deploy ClickHouse Installation"
+      variant={ModalVariant.small}
+      isOpen={isModalOpen}
+      onClose={closeModal}
+      position="top"
+      actions={[
+        <Button key="deploy" variant="primary"
+                onClick={onDeployClick} isDisabled={selectedNamespace === ""}>
+          Deploy
+        </Button>,
+        <Button key="cancel" variant="link" onClick={closeModal}>
+          Cancel
+        </Button>
+      ]}
+    >
+      <div>
+        Select a Namespace:
+      </div>
+      <NamespaceSelector onSelect={setSelectedNamespace}/>
+    </Modal>
+  )
 }
 
 // eslint-disable-next-line prefer-const
-let Installations: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
+const Installations: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [CHIs, setCHIs] = useState(new Array<CHI>())
   const addAlert = props.addAlert
   const fetchData = () => {
@@ -115,7 +92,7 @@ let Installations: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
           </Title>
         </SplitItem>
         <SplitItem>
-          <NewCHIModal addAlert={addAlert}/>
+          <ToggleModal modal={NewCHIModal} addAlert={addAlert}/>
         </SplitItem>
       </Split>
       <DataTable table_variant="compact"
