@@ -62,7 +62,9 @@ const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props: Toggle
     })
       .then(response => {
         if (!response.ok) {
-          throw Error(response.statusText)
+          response.text().then(text => {
+            throw Error(`${response.statusText}: ${text}`)
+          })
         }
         closeModalAndClearEditor()
       })
@@ -123,7 +125,9 @@ const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) =>
     fetch('/api/v1/chis')
       .then(response => {
         if (!response.ok) {
-          throw Error(response.statusText)
+          response.text().then(text => {
+            throw Error(`${response.statusText}: ${text}`)
+          })
         }
         return response.json()
       })
@@ -164,7 +168,9 @@ const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) =>
     })
       .then(response => {
         if (!response.ok) {
-          throw Error(response.statusText)
+          response.text().then(text => {
+            throw Error(`${response.statusText}: ${text}`)
+          })
         }
       })
       .catch(error => {

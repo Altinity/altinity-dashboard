@@ -65,7 +65,9 @@ const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (props: T
       .then(response => {
         closeModal()
         if (!response.ok) {
-          throw Error(response.statusText)
+          response.text().then(text => {
+            throw Error(`${response.statusText}: ${text}`)
+          })
         }
       })
       .catch(error => {
@@ -127,7 +129,9 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
     fetch('/api/v1/operators')
       .then(response => {
         if (!response.ok) {
-          throw Error(response.statusText)
+          response.text().then(text => {
+            throw Error(`${response.statusText}: ${text}`)
+          })
         }
         return response.json()
       })
@@ -164,7 +168,9 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
     })
       .then(response => {
         if (!response.ok) {
-          throw Error(response.statusText)
+          response.text().then(text => {
+            throw Error(`${response.statusText}: ${text}`)
+          })
         }
       })
       .catch(error => {
