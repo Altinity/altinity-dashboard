@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
-	chopclientset "github.com/altinity/clickhouse-operator/pkg/client/clientset/versioned"
 	"github.com/emicklei/go-restful/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
@@ -55,13 +54,8 @@ func (c *ChiResource) WebService() *restful.WebService {
 
 // GET http://localhost:8080/chis
 func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
-	k := k8s.GetK8s()
-	cc, err := chopclientset.NewForConfig(k.Config)
-	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
-		return
-	}
-	chis, err := cc.ClickhouseV1().ClickHouseInstallations("").List(context.TODO(), metav1.ListOptions{})
+	chis, err := k8s.GetK8s().ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
+		context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		_ = response.WriteError(http.StatusInternalServerError, err)
 		return
@@ -72,8 +66,8 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 			Name:      chi.Name,
 			Namespace: chi.Namespace,
 			Status:    chi.Status.Status,
-			Clusters:  chi.ClustersCount(),
-			Hosts:     chi.HostsCount(),
+			Clusters:  chi.Status.ClustersCount,
+			Hosts:     chi.Status.HostsCount,
 		})
 	}
 	_ = response.WriteEntity(list)
