@@ -8,3 +8,5 @@ updates:
     directory: "/ui"
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "react-monaco-editor"  # version is set by patternfly/react-code-editor
