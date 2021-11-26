@@ -47,6 +47,9 @@ jobs:
       - name: Run Javascript linter
         run: cd ui && npx eslint --max-warnings=0 src/
 
+      - name: Check node modules security
+        run: cd ui && npm audit --audit-level moderate
+
       - name: Build adash
         run: make adash
 
