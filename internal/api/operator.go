@@ -51,18 +51,18 @@ func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService,
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("").To(o.handleGet).
+	ws.Route(ws.GET("").To(o.handleGetOps).
 		Doc("get all operators").
 		Writes([]Operator{}).
 		Returns(200, "OK", []Operator{}))
 
-	ws.Route(ws.PUT("/{namespace}").To(o.handlePut).
+	ws.Route(ws.PUT("/{namespace}").To(o.handlePutOp).
 		Doc("deploy an operator").
 		Param(ws.PathParameter("namespace", "namespace to deploy to").DataType("string")).
 		Reads(OperatorPutParams{}).
 		Returns(200, "OK", Operator{}))
 
-	ws.Route(ws.DELETE("/{namespace}").To(o.handleDelete).
+	ws.Route(ws.DELETE("/{namespace}").To(o.handleDeleteOp).
 		Doc("delete an operator").
 		Param(ws.PathParameter("namespace", "namespace to delete from").DataType("string")).
 		Returns(200, "OK", nil))
@@ -176,10 +176,10 @@ func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
 }
 
 // GET http://localhost:8080/operators
-func (o *OperatorResource) handleGet(request *restful.Request, response *restful.Response) {
+func (o *OperatorResource) handleGetOps(request *restful.Request, response *restful.Response) {
 	ops, err := o.getOperators("")
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusInternalServerError, "getting operators", err)
 		return
 	}
 	_ = response.WriteEntity(ops)
@@ -238,41 +238,43 @@ func (o *OperatorResource) waitForOperator(namespace string, timeout time.Durati
 }
 
 // PUT http://localhost:8080/operators
-func (o *OperatorResource) handlePut(request *restful.Request, response *restful.Response) {
+func (o *OperatorResource) handlePutOp(request *restful.Request, response *restful.Response) {
 	namespace := request.PathParameter("namespace")
 	if namespace == "" {
-		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "namespace is required"})
+		webError(response, http.StatusBadRequest, "processing request",
+			restful.ServiceError{Message: "namespace is required"})
 		return
 	}
 	putParams := OperatorPutParams{}
 	err := request.ReadEntity(&putParams)
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusBadRequest, "reading request body", err)
 		return
 	}
 	err = o.deployOrDeleteOperator(namespace, putParams.Version, false)
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusInternalServerError, "applying operator", err)
 		return
 	}
 	op, err := o.waitForOperator(namespace, 15*time.Second)
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusInternalServerError, "waiting for operator deployment", err)
 		return
 	}
 	_ = response.WriteEntity(op)
 }
 
 // DELETE http://localhost:8080/operators
-func (o *OperatorResource) handleDelete(request *restful.Request, response *restful.Response) {
+func (o *OperatorResource) handleDeleteOp(request *restful.Request, response *restful.Response) {
 	namespace := request.PathParameter("namespace")
 	if namespace == "" {
-		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "namespace is required"})
+		webError(response, http.StatusBadRequest, "processing request",
+			restful.ServiceError{Message: "namespace is required"})
 		return
 	}
 	err := o.deployOrDeleteOperator(namespace, "", true)
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusInternalServerError, "deleting operator", err)
 		return
 	}
 	_ = response.WriteEntity(nil)

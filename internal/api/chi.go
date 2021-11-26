@@ -39,12 +39,12 @@ func (c *ChiResource) WebService() *restful.WebService {
 		Writes([]Chi{}).
 		Returns(200, "OK", []Chi{}))
 
-	ws.Route(ws.PUT("").To(c.handlePut).
+	ws.Route(ws.PUT("").To(c.handlePutCHI).
 		Doc("deploy a ClickHouse Installation from YAML").
 		Reads(ChiPutParams{}).
 		Returns(200, "OK", nil))
 
-	ws.Route(ws.DELETE("").To(c.handleDelete).
+	ws.Route(ws.DELETE("").To(c.handleDeleteCHI).
 		Doc("delete a ClickHouse installation").
 		Reads(ChiDeleteParams{}).
 		Returns(200, "OK", nil))
@@ -57,7 +57,7 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	chis, err := k8s.GetK8s().ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
 		context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusBadRequest, "listing CHIs", err)
 		return
 	}
 	list := make([]Chi, 0, len(chis.Items))
@@ -74,37 +74,39 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 }
 
 // PUT http://localhost:8080/chis
-func (c *ChiResource) handlePut(request *restful.Request, response *restful.Response) {
+func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.Response) {
 	putParams := ChiPutParams{}
 	err := request.ReadEntity(&putParams)
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusBadRequest, "reading request body", err)
 		return
 	}
 	err = k8s.GetK8s().DoApply(putParams.YAML, putParams.Namespace)
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusInternalServerError, "applying CHI", err)
 		return
 	}
 	_ = response.WriteEntity(nil)
 }
 
 // DELETE http://localhost:8080/chis
-func (c *ChiResource) handleDelete(request *restful.Request, response *restful.Response) {
+func (c *ChiResource) handleDeleteCHI(request *restful.Request, response *restful.Response) {
 	deleteParams := ChiDeleteParams{}
 	err := request.ReadEntity(&deleteParams)
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusBadRequest, "reading request body", err)
 		return
 	}
 
 	if deleteParams.ChiName == "" {
-		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "chi-name is required"})
+		webError(response, http.StatusBadRequest, "processing request",
+			restful.ServiceError{Message: "chi_name is required"})
 		return
 	}
 
 	if deleteParams.Namespace == "" {
-		_ = response.WriteError(http.StatusBadRequest, restful.ServiceError{Message: "namespace is required"})
+		webError(response, http.StatusBadRequest, "processing request",
+			restful.ServiceError{Message: "namespace is required"})
 		return
 	}
 
@@ -112,7 +114,7 @@ func (c *ChiResource) handleDelete(request *restful.Request, response *restful.R
 		ClickHouseInstallations(deleteParams.Namespace).
 		Delete(context.TODO(), deleteParams.ChiName, metav1.DeleteOptions{})
 	if err != nil {
-		_ = response.WriteError(http.StatusInternalServerError, err)
+		webError(response, http.StatusInternalServerError, "deleting CHI", err)
 		return
 	}
 

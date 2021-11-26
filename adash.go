@@ -40,6 +40,7 @@ func main() {
 	tlsKey := cmdFlags.String("tlskey", "", "private key file to use to serve TLS")
 	selfSigned := cmdFlags.Bool("selfsigned", false, "run TLS using self-signed key")
 	version := cmdFlags.Bool("version", false, "show version and exit")
+	debug := cmdFlags.Bool("debug", false, "enable debug logging")
 
 	// Parse the CLI flags
 	err := cmdFlags.Parse(os.Args[1:])
@@ -74,6 +75,11 @@ func main() {
 	if (*selfSigned) && (*tlsCert != "") {
 		fmt.Printf("Cannot provide TLS certificate and also run self-signed")
 		os.Exit(1)
+	}
+
+	// Enable debug logging, if requested
+	if *debug {
+		api.ErrorsToConsole = true
 	}
 
 	// Connect to Kubernetes
