@@ -82,6 +82,6 @@
     "react-router-last-location": "git://github.com/hinok/react-router-last-location#2d57c676abb49f3f5755c44fbe2c24b01a8bb68b",
     "sirv-cli": "^1.0.12",
     "stream": "^0.0.2",
-    "swagger-ui-react": "^4.1.0"
+    "swagger-ui-react": "^4.1.2"
   }
 }
