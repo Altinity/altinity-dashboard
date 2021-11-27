@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  Alert,
   AlertVariant,
   Button, ButtonVariant,
   Modal,
@@ -18,6 +19,7 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { editor } from 'monaco-editor';
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
+import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 
 interface CHI {
   name: string
@@ -37,7 +39,6 @@ const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props: Toggle
     outerCloseModal()
   }
   const setYaml = (yaml: string) => {
-    console.log(`yaml: ${yaml}`)
     realSetYaml(yaml)
   }
   const closeModalAndClearEditor = (): void => {
@@ -45,32 +46,21 @@ const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props: Toggle
     setYaml("")
   }
   const setYamlFromEditor = (editor: IStandaloneCodeEditor) => {
-    console.log('yamlFromEditor')
     setYaml(editor.getValue())
   }
   const onDeployClick = (): void => {
-    fetch(`/api/v1/chis`, {
-      method: 'PUT',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    fetchWithErrorHandling(`/api/v1/chis`, 'PUT',
+      {
         namespace: selectedNamespace,
         yaml: yaml
-      })
-    })
-      .then(response => {
-        if (!response.ok) {
-          response.text().then(text => {
-            throw Error(`${response.statusText}: ${text}`)
-          })
-        }
+      },
+      () => {
         closeModalAndClearEditor()
-      })
-      .catch(error => {
+      },
+      (response, text, error) => {
+        const errorMessage = (error == "") ? text : `${error}: ${text}`
+        addAlert(`Error deploying CHI: ${errorMessage}`, AlertVariant.danger)
         closeModal()
-        addAlert(`Error deploying CHI: ${error.message}`, AlertVariant.danger)
       })
   }
   return (
@@ -106,7 +96,7 @@ const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props: Toggle
         />
         <div>
           <div>
-            Select a Namespace:
+            Select a Namespace To Deploy To:
           </div>
           <NamespaceSelector onSelect={setSelectedNamespace}/>
         </div>
@@ -120,22 +110,18 @@ const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) =>
   const [CHIs, setCHIs] = useState(new Array<CHI>())
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<CHI|undefined>(undefined)
+  const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const addAlert = props.addAlert
   const fetchData = () => {
-    fetch('/api/v1/chis')
-      .then(response => {
-        if (!response.ok) {
-          response.text().then(text => {
-            throw Error(`${response.statusText}: ${text}`)
-          })
-        }
-        return response.json()
-      })
-      .then(res => {
-        setCHIs(res as CHI[])
-      })
-      .catch(error => {
-        addAlert(`Error retrieving ClickHouse Installations: ${error.message}`, AlertVariant.danger)
+    fetchWithErrorHandling(`/api/v1/chis`, 'GET',
+      undefined,
+      (response, body) => {
+        setCHIs(body as CHI[])
+        setRetrieveError(undefined)
+      },
+      (response, text, error) => {
+        const errorMessage = (error == "") ? text : `${error}: ${text}`
+        setRetrieveError(`Error retrieving CHIs: ${errorMessage}`)
       })
   }
   useEffect(() => {
@@ -155,32 +141,24 @@ const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) =>
     if (itemToDelete === undefined) {
       return
     }
-    fetch(`/api/v1/chis`, {
-      method: 'DELETE',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    fetchWithErrorHandling(`/api/v1/chis`, 'DELETE',
+      {
         namespace: itemToDelete.namespace,
         chi_name: itemToDelete.name,
-      })
-    })
-      .then(response => {
-        if (!response.ok) {
-          response.text().then(text => {
-            throw Error(`${response.statusText}: ${text}`)
-          })
-        }
-      })
-      .catch(error => {
-        addAlert(`Error deleting installation: ${error.message}`, AlertVariant.danger)
+      },
+      undefined,
+      (response, text, error) => {
+        const errorMessage = (error == "") ? text : `${error}: ${text}`
+        addAlert(`Error deleting CHI: ${errorMessage}`, AlertVariant.danger)
       })
   }
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false)
     setItemToDelete(undefined)
   }
+  const retrieveErrorPane = retrieveError === undefined ? null : (
+    <Alert variant="danger" title={retrieveError} isInline/>
+  )
   return (
     <PageSection>
       <SimpleModal
@@ -205,7 +183,9 @@ const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) =>
           <ToggleModal modal={NewCHIModal} addAlert={addAlert}/>
         </SplitItem>
       </Split>
+      {retrieveErrorPane}
       <DataTable
+        keyPrefix="CHIs"
         data={CHIs}
         columns={['Name', 'Namespace', 'Status', 'Clusters', 'Hosts']}
         column_fields={['name', 'namespace', 'status', 'clusters', 'hosts']}

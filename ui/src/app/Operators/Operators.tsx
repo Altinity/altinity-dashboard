@@ -43,13 +43,12 @@ interface Operator {
 
 const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (props: ToggleModalSubProps) => {
   const {addAlert, isModalOpen} = props
-  const outerCloseModal = props.closeModal
   const [selectedVersion, setSelectedVersion] = useState("")
   const [selectedNamespace, setSelectedNamespace] = useState("")
   const closeModal = (): void => {
     setSelectedVersion("")
     setSelectedNamespace("")
-    outerCloseModal()
+    props.closeModal()
   }
   const onDeployClick = (): void => {
     fetch(`/api/v1/operators/${selectedNamespace}`, {
@@ -140,7 +139,8 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
       })
       .catch(error => {
           addAlert(`Error retrieving operators: ${error.message}`, AlertVariant.danger)
-      })
+        }
+      )
   }
   useEffect(() => {
     fetchData()
@@ -148,9 +148,8 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
     return () => {
       clearInterval(timer)
     }
-  },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  [])
+  }, [])
   const onDeleteClick = (item: Operator) => {
     setItemToDelete(item)
     setIsDeleteModalOpen(true)
@@ -204,10 +203,14 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
           </Title>
         </SplitItem>
         <SplitItem>
-          <ToggleModal addAlert={addAlert} modal={NewOperatorModal}/>
+          <ToggleModal
+            addAlert={addAlert}
+            modal={NewOperatorModal}
+          />
         </SplitItem>
       </Split>
       <ExpandableTable
+        keyPrefix="operators"
         data={operators}
         columns={['Name', 'Namespace', 'Conditions', 'Version']}
         column_fields={['name', 'namespace', 'conditions', 'version']}
@@ -229,12 +232,14 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
         }}
         expanded_content={(data) => (
           <ExpandableTable
+            keyPrefix="operator-pods"
             table_variant="compact"
             data={data.pods}
             columns={['Pod', 'Status', 'Version']}
             column_fields={['name', 'status', 'version']}
             expanded_content={(data) => (
               <DataTable table_variant="compact"
+                keyPrefix="operator-containers"
                 data={data.containers}
                 columns={['Container', 'State', 'Image']}
                 column_fields={['name', 'state', 'image']}

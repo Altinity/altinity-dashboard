@@ -10,6 +10,7 @@ class DataTable extends React.Component<
     column_fields: Array<string>
     actions?: (object) => TdActionsType
     table_variant?: "compact"
+    keyPrefix: string
   },
   {
   }> {
@@ -25,10 +26,10 @@ class DataTable extends React.Component<
     return (
       <TableComposable variant={this.props.table_variant}>
         <Thead>
-          <Tr>
+          <Tr key={`${this.props.keyPrefix}-hdr`}>
             {
               this.props.columns.map((column, columnIndex) => (
-                <Th key={columnIndex}>{column}</Th>
+                <Th key={`${this.props.keyPrefix}-hdr-${columnIndex}`}>{column}</Th>
               ))
             }
             { menuHeader }
@@ -38,10 +39,11 @@ class DataTable extends React.Component<
         {
           this.props.data.map((dataItem, dataIndex) => {
             return (
-              <Tr key={dataIndex}>
+              <Tr key={`${this.props.keyPrefix}-row-${dataIndex}`}>
                 {
                   this.props.columns.map((column, columnIndex) => (
-                    <Td key={`${dataIndex}_${columnIndex}`} dataLabel={column}>
+                    <Td key={`${this.props.keyPrefix}-row-${dataIndex}-col-${columnIndex}`}
+                        dataLabel={column}>
                       {dataItem[this.props.column_fields[columnIndex]]}
                     </Td>
                   ))
