@@ -1,107 +1,108 @@
 import * as React from 'react';
-import { ReactElement, ReactNode, SyntheticEvent } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { ContextSelector, ContextSelectorItem } from '@patternfly/react-core';
+import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 
 interface Namespace {
   name: string
 }
 
-class NamespaceSelector extends React.Component<
+const NamespaceSelector: React.FunctionComponent<
   {
-    onSelect?: (string) => void
-  },
-  {
-    selected: string
-    searchValue: string
-    filteredItems: Array<string>
-    isDropdownOpen: boolean
-    isFirstTime: boolean
-    namespaces: Array<Namespace>
-  }> {
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  constructor(props) {
-    super(props)
-    this.state = {
-      selected: "",
-      searchValue: "",
-      filteredItems: new Array<string>(),
-      isDropdownOpen: true,
-      isFirstTime: true,
-      namespaces: new Array<Namespace>(),
+    onSelect?: (selected: string) => void
+  }> = (props) => {
+
+  const [selected, setSelected] = useState("")
+  const [searchValue, setSearchValue] = useState("")
+  const [filteredItems, setFilteredItems] = useState(new Array<string>())
+  const [isDropDownOpen, setIsDropDownOpen] = useState(false)
+  const [namespaces, setNamespaces] = useState(new Array<Namespace>())
+
+  // The following code is a hacky workaround for a problem where when menuApplyTo
+  // is set to document.body, the ContextSelector's onSelect doesn't fire if you
+  // select an item quickly after first opening the dropdown.  Stepping through
+  // the process of opening and closing the drop-down seems to establish the
+  // necessary conditions for onSelect to work correctly.
+  const [startupState, setStartupState] = useState(0)
+  const [startupTimer, setStartupTimer] = useState<NodeJS.Timeout|undefined>(undefined)
+  switch(startupState) {
+    case 0:
+      setIsDropDownOpen(true)
+      setStartupTimer(setTimeout(() => {setStartupState(2)}, 5))
+      setStartupState(1)
+      break
+    case 1:
+      // waiting for setTimeout to happen
+      break
+    case 2:
+      setIsDropDownOpen(false)
+      if (startupTimer) clearTimeout(startupTimer)
+      setStartupTimer(undefined)
+      setStartupState(3)
+      break
+    case 3:
+      // normal operation
+      break
+  }
+  // End of terrible hack
+
+  const onToggle = (event: Event, isDropDownOpen: boolean): void => {
+    setIsDropDownOpen(isDropDownOpen)
+  }
+  const onSelect = (event: Event, value: ReactNode): void => {
+    const newSelected = value ? value.toString() : ""
+    if (props.onSelect) {
+      props.onSelect(newSelected)
     }
+    setSelected(newSelected)
+    setIsDropDownOpen(false)
   }
-  onToggle = (event: Event, isDropdownOpen: boolean): void => {
-    this.setState({
-      isDropdownOpen: isDropdownOpen
-    })
+  const onSearchInputChange = (value: string): void => {
+    setSearchValue(value)
   }
-  onSelect = (event: SyntheticEvent<HTMLDivElement, Event>, value: ReactNode): void => {
-    this.setState({
-      selected: value ? value.toString() : "",
-      isDropdownOpen: !this.state.isDropdownOpen
-    }, () => {
-      if (this.props.onSelect) {
-        this.props.onSelect(this.state.selected)
-      }
-    })
-  }
-  onSearchInputChange = (value: string): void => {
-    this.setState({
-      searchValue: value
-    })
-  }
-  onSearchButtonClick = (): void => {
+  const onSearchButtonClick = (): void => {
     const filtered =
-      this.state.searchValue === ''
-        ? this.state.namespaces
-        : this.state.namespaces.filter((item: Namespace): boolean => {
-          return item.name.toLowerCase().indexOf(this.state.searchValue.toLowerCase()) !== -1
+      searchValue === ''
+        ? namespaces
+        : namespaces.filter((item: Namespace): boolean => {
+          return item.name.toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
         });
-    this.setState({
-      filteredItems: filtered.map((value: Namespace): string => { return value.name })
-    });
+    setFilteredItems(filtered.map((value: Namespace): string => { return value.name }))
   }
-  componentDidMount(): void {
-    fetch('/api/v1/namespaces')
-      .then(res => res.json())
-      .then(res => {
-        return res as Namespace[]
-      })
-      .then(res => {
-        this.setState({
-          namespaces: res,
-          filteredItems: res.map((value: Namespace): string => { return value.name })
-        })
-      })
-  }
-  render(): ReactElement {
-    if (this.state.isFirstTime) {
-      setTimeout(() => {
-        this.setState({
-          isFirstTime: false,
-          isDropdownOpen: false
-        }), 0
-      })
-    }
-    return (
-      <ContextSelector
-        toggleText={this.state.selected}
-        onSearchInputChange={this.onSearchInputChange}
-        isOpen={this.state.isDropdownOpen}
-        searchInputValue={this.state.searchValue}
-        onToggle={this.onToggle}
-        onSelect={this.onSelect}
-        onSearchButtonClick={this.onSearchButtonClick}
-        menuAppendTo={() => document.body}
-      >
-        {this.state.filteredItems.map((text, index) => {
-          return (
-            <ContextSelectorItem key={index}>{text}</ContextSelectorItem>
-          )
-        })}
-      </ContextSelector>
-    );
-  }
+  useEffect(() => {
+    fetchWithErrorHandling(`/api/v1/namespaces`, 'GET',
+      undefined,
+      (response, body) => {
+        const ns = body ? body as Namespace[] : []
+        setNamespaces(ns)
+        setFilteredItems(ns.map((value): string => {
+          return value.name
+        }))
+      },
+      () => {
+        setNamespaces([])
+        setFilteredItems([].map((): string => ""))
+      }
+    )
+  }, [])
+  return (
+    <ContextSelector
+      toggleText={selected}
+      onSearchInputChange={onSearchInputChange}
+      isOpen={isDropDownOpen}
+      searchInputValue={searchValue}
+      onToggle={onToggle}
+      onSelect={onSelect}
+      onSearchButtonClick={onSearchButtonClick}
+      menuAppendTo={() => { return document.body }}
+    >
+      {filteredItems.map((text, index) => {
+        return (
+          <ContextSelectorItem key={index}>{text}</ContextSelectorItem>
+        )
+      })}
+    </ContextSelector>
+  )
 }
 
 export { Namespace, NamespaceSelector };
