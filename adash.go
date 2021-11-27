@@ -100,13 +100,14 @@ func main() {
 		tlsKey = &key
 	}
 
-	// Read the index.html from the bundled assets and set its devmode flag
-	indexHTMLOrig, err := uiFiles.ReadFile("ui/dist/index.html")
+	// Read the index.html from the bundled assets and update its devmode flag
+	var indexHTML []byte
+	indexHTML, err = uiFiles.ReadFile("ui/dist/index.html")
 	if err != nil {
 		panic(err)
 	}
-	indexHTML := regexp.MustCompile(`meta name="devmode" content="(\w+)"`).
-		ReplaceAll(indexHTMLOrig, []byte(`meta name="devmode" content="`+
+	indexHTML = regexp.MustCompile(`meta name="devmode" content="(\w*)"`).
+		ReplaceAll(indexHTML, []byte(`meta name="devmode" content="`+
 			strconv.FormatBool(*devMode)+`"`))
 
 	// Create HTTP router object
