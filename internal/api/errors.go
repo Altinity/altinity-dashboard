@@ -9,7 +9,7 @@ import (
 var ErrorsToConsole bool
 
 func webError(response *restful.Response, status int, source string, err error) {
-	logErr := fmt.Errorf(fmt.Sprintf("Error %s: %v", source, err))  // nolint // dynamic errors wanted here
+	logErr := fmt.Errorf(fmt.Sprintf("Error %s: %v", source, err)) // nolint // dynamic errors wanted here
 	if ErrorsToConsole {
 		log.Printf("%s\n", logErr)
 	}
