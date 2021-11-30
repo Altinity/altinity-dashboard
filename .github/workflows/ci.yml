@@ -63,6 +63,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show variables
+        run: |
+          echo "github.ref = ${{ github.ref }}"
+          echi "github.event_name = ${{ github.event_name }}"
       
       - name: Extract metadata for container image
         if: github.ref == 'ref/heads/main' && github.event_name == 'push'
