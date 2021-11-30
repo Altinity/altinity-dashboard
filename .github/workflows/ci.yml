@@ -69,7 +69,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/altinity-dashboard
+          images: ghcr.io/altinity/altinity-dashboard
 
       - name: Push to GitHub registry
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
