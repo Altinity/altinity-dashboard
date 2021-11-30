@@ -2,12 +2,16 @@ package main
 
 import (
 	"bytes"
+	"context"
+	rand "crypto/rand"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/api"
 	_ "github.com/altinity/altinity-dashboard/internal/api"
+	"github.com/altinity/altinity-dashboard/internal/auth"
 	"github.com/altinity/altinity-dashboard/internal/certs"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
@@ -18,8 +22,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"regexp"
+	"runtime"
 	"strconv"
+	"time"
 )
 
 // UI embedded files
@@ -29,6 +36,25 @@ var uiFiles embed.FS
 // ClickHouse Operator deployment template embedded file
 //go:embed embed
 var embedFiles embed.FS
+
+// openWebBrowser opens the default web browser to a given URL
+func openWebBrowser(url string) {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		//nolint:goerr113
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		log.Printf("Error opening web browser: %s\n", err)
+	}
+}
 
 func main() {
 	// Set up CLI parser
@@ -40,6 +66,8 @@ func main() {
 	tlsCert := cmdFlags.String("tlscert", "", "certificate file to use to serve TLS")
 	tlsKey := cmdFlags.String("tlskey", "", "private key file to use to serve TLS")
 	selfSigned := cmdFlags.Bool("selfsigned", false, "run TLS using self-signed key")
+	noToken := cmdFlags.Bool("notoken", false, "do not require an auth token to access the UI")
+	openBrowser := cmdFlags.Bool("openbrowser", false, "open the UI in a web browser after starting")
 	version := cmdFlags.Bool("version", false, "show version and exit")
 	debug := cmdFlags.Bool("debug", false, "enable debug logging")
 
@@ -114,7 +142,7 @@ func main() {
 	// Create HTTP router object
 	httpMux := http.NewServeMux()
 
-	// Create Swagger-compatible API docs resource
+	// Create API handlers & docs
 	rc := restful.NewContainer()
 	rc.ServeMux = httpMux
 	rc.Add((&api.NamespaceResource{}).WebService())
@@ -173,15 +201,61 @@ func main() {
 		}
 	})
 
-	// Start the server
-	bindStr := fmt.Sprintf("%s:%s", *bindHost, *bindPort)
-	if *tlsCert != "" {
-		log.Printf("start listening on https://%s", bindStr)
-		log.Fatal(http.ListenAndServeTLS(bindStr, *tlsCert, *tlsKey, httpMux))
+	// Configure auth middleware
+	var httpHandler http.Handler
+	var authToken string
+	if *noToken {
+		httpHandler = httpMux
 	} else {
-		log.Printf("start listening on http://%s", bindStr)
-		log.Fatal(http.ListenAndServe(bindStr, httpMux))
+		// Generate auth token
+		randBytes := make([]byte, 256/8)
+		_, err = rand.Read(randBytes)
+		if err != nil {
+			panic(err)
+		}
+		authToken = base64.RawURLEncoding.EncodeToString(randBytes)
+		httpHandler = auth.NewHandler(httpMux, authToken)
 	}
+
+	// Set up the server
+	bindStr := fmt.Sprintf("%s:%s", *bindHost, *bindPort)
+	var authStr string
+	if authToken != "" {
+		authStr = fmt.Sprintf("?token=%s", authToken)
+	}
+	var url string
+	var runServer func() error
+	if *tlsCert != "" {
+		url = fmt.Sprintf("https://%s%s", bindStr, authStr)
+		runServer = func() error {
+			return http.ListenAndServeTLS(bindStr, *tlsCert, *tlsKey, httpHandler)
+		}
+	} else {
+		url = fmt.Sprintf("http://%s%s", bindStr, authStr)
+		runServer = func() error {
+			return http.ListenAndServe(bindStr, httpHandler)
+		}
+	}
+
+	// Open the browser if requested and the server doesn't immediately fail
+	ctx, cancel := context.WithCancel(context.Background())
+	if *openBrowser {
+		go func() {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(250 * time.Millisecond):
+				openWebBrowser(url)
+				return
+			}
+		}()
+	}
+
+	// Actually start the server
+	log.Printf("Server started.  Connect using: %s\n", url)
+	err = runServer()
+	cancel()
+	log.Fatal(err)
 }
 
 func enrichSwaggerObject(swo *spec.Swagger) {
