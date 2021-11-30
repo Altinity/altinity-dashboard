@@ -7,9 +7,11 @@ import (
 	"errors"
 	chopclientset "github.com/altinity/clickhouse-operator/pkg/client/clientset/versioned"
 	"io"
+	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -84,9 +86,54 @@ var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONSc
 var errNoNamespace = errors.New("could not determine namespace for namespace-scoped entity")
 var errNamespaceConflict = errors.New("provided namespace conflicts with YAML object")
 
-// doApplyOrDelete does a server-side apply or delete of a given YAML string
+// doApplyWithSSA does a server-side apply of an object
+func (i *Info) doApplyWithSSA(dr dynamic.ResourceInterface, obj *unstructured.Unstructured) error {
+	// Marshal object into JSON
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+
+	// Create or Update the object with SSA
+	force := true
+	_, err = dr.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
+		FieldManager: "altinity-dashboard",
+		Force:        &force,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// doGetVerUpdate does a client-side apply of an object
+func (i *Info) doGetVerUpdate(dr dynamic.ResourceInterface, obj *unstructured.Unstructured) error {
+	// Retrieve current object from Kubernetes
+	curObj, err := dr.Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
+	if err != nil {
+		se := &errors2.StatusError{}
+		if !errors.As(err, &se) || se.ErrStatus.Code != 404 {
+			return err
+		}
+	}
+
+	// Create or update the new object
+	if err == nil {
+		// If the old object existed, copy its version number to the new object
+		obj.SetResourceVersion(curObj.GetResourceVersion())
+		_, err = dr.Update(context.TODO(), obj, metav1.UpdateOptions{})
+	} else {
+		_, err = dr.Create(context.TODO(), obj, metav1.CreateOptions{})
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// doApplyOrDelete does an apply or delete of a given YAML string
 // Adapted from https://ymmt2005.hatenablog.com/entry/2020/04/14/An_example_of_using_dynamic_client_of_k8s.io/client-go
-func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool) error {
+func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, useSSA bool) error {
 	multiDocReader := utilyaml.NewYAMLReader(bufio.NewReader(strings.NewReader(yaml)))
 	yamlDocs := make([][]byte, 0)
 	for {
@@ -101,34 +148,37 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool) err
 		yamlDocs = append(yamlDocs, yd)
 	}
 
-	// 1. Prepare a RESTMapper to find GVR
+	// Prepare a RESTMapper to find GVR
 	dc, err := discovery.NewDiscoveryClientForConfig(i.Config)
 	if err != nil {
 		return err
 	}
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
 
-	// 2. Prepare the dynamic client
-	dyn, err := dynamic.NewForConfig(i.Config)
+	// Prepare the dynamic client
+	var dyn dynamic.Interface
+	dyn, err = dynamic.NewForConfig(i.Config)
 	if err != nil {
 		return err
 	}
 
 	for _, yd := range yamlDocs {
-		// 3. Decode YAML manifest into unstructured.Unstructured
+		// Decode YAML manifest into unstructured.Unstructured
 		obj := &unstructured.Unstructured{}
-		_, gvk, err := decUnstructured.Decode(yd, nil, obj)
+		var gvk *schema.GroupVersionKind
+		_, gvk, err = decUnstructured.Decode(yd, nil, obj)
 		if err != nil {
 			return err
 		}
 
-		// 4. Find GVR
-		mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		// Find GVR
+		var mapping *meta.RESTMapping
+		mapping, err = mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
 			return err
 		}
 
-		// 5. Obtain REST interface for the GVR
+		// Obtain REST interface for the GVR
 		var dr dynamic.ResourceInterface
 		if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
 			// namespaced resources should specify the namespace
@@ -156,40 +206,27 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool) err
 			dr = dyn.Resource(mapping.Resource)
 		}
 
-		// 6. Marshal object into JSON
-		data, err := json.Marshal(obj)
+		switch {
+		case doDelete:
+			err = dr.Delete(context.TODO(), obj.GetName(), metav1.DeleteOptions{})
+		case !doDelete && useSSA:
+			err = i.doApplyWithSSA(dr, obj)
+		case !doDelete && !useSSA:
+			err = i.doGetVerUpdate(dr, obj)
+		}
 		if err != nil {
 			return err
-		}
-
-		// 7. Create or Update the object with SSA
-		//     types.ApplyPatchType indicates SSA.
-		//     FieldManager specifies the field owner ID.
-		if doDelete {
-			err = dr.Delete(context.TODO(), obj.GetName(), metav1.DeleteOptions{})
-			if err != nil {
-				return err
-			}
-		} else {
-			force := true
-			_, err = dr.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
-				FieldManager: "altinity-dashboard",
-				Force:        &force,
-			})
-			if err != nil {
-				return err
-			}
 		}
 	}
 	return nil
 }
 
 // DoApply does a server-side apply of a given YAML string
-func (i *Info) DoApply(yaml string, namespace string) error {
-	return i.doApplyOrDelete(yaml, namespace, false)
+func (i *Info) DoApply(yaml string, namespace string, useSSA bool) error {
+	return i.doApplyOrDelete(yaml, namespace, false, useSSA)
 }
 
 // DoDelete deletes the resources identified in a given YAML string
 func (i *Info) DoDelete(yaml string, namespace string) error {
-	return i.doApplyOrDelete(yaml, namespace, true)
+	return i.doApplyOrDelete(yaml, namespace, true, false)
 }

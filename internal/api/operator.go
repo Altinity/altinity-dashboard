@@ -5,7 +5,6 @@ import (
 	"embed"
 	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
-	"github.com/drone/envsubst"
 	"github.com/emicklei/go-restful/v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +18,7 @@ import (
 
 // OperatorResource is the REST layer to Pods
 type OperatorResource struct {
-	opDeployTemplate *envsubst.Template
+	opDeployTemplate string
 	release          string
 }
 
@@ -30,20 +29,17 @@ type OperatorPutParams struct {
 
 // WebService creates a new service that can handle REST requests
 func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService, error) {
-	bytes, err := chopFiles.ReadFile("embed/chop-release")
+	fileData, err := chopFiles.ReadFile("embed/chop-release")
 	if err != nil {
 		return nil, err
 	}
-	o.release = strings.TrimSpace(string(bytes))
+	o.release = strings.TrimSpace(string(fileData))
 
-	bytes, err = chopFiles.ReadFile("embed/clickhouse-operator-install-template.yaml")
+	fileData, err = chopFiles.ReadFile("embed/clickhouse-operator-install-template.yaml")
 	if err != nil {
 		return nil, err
 	}
-	o.opDeployTemplate, err = envsubst.Parse(string(bytes))
-	if err != nil {
-		return nil, err
-	}
+	o.opDeployTemplate = string(fileData)
 
 	ws := new(restful.WebService)
 	ws.
@@ -185,32 +181,42 @@ func (o *OperatorResource) handleGetOps(request *restful.Request, response *rest
 	_ = response.WriteEntity(ops)
 }
 
+// processTemplate replaces all instances of ${VAR} in a string with the map value
+func processTemplate(template string, vars map[string]string) string {
+	for k, v := range vars {
+		template = strings.ReplaceAll(template, "${"+k+"}", v)
+	}
+	return template
+}
+
 // deployOrDeleteOperator deploys or deletes a clickhouse-operator
 func (o *OperatorResource) deployOrDeleteOperator(namespace string, version string, doDelete bool) error {
 	if version == "" {
 		version = o.release
 	}
-	deploy, err := o.opDeployTemplate.Execute(func(key string) string {
-		s, ok := map[string]string{
-			"OPERATOR_IMAGE":             fmt.Sprintf("altinity/clickhouse-operator:%s", version),
-			"METRICS_EXPORTER_IMAGE":     fmt.Sprintf("altinity/metrics-exporter:%s", version),
-			"OPERATOR_NAMESPACE":         namespace,
-			"METRICS_EXPORTER_NAMESPACE": namespace,
-		}[key]
-		if ok {
-			return s
-		}
-		return ""
+	deploy := processTemplate(o.opDeployTemplate, map[string]string{
+		"OPERATOR_IMAGE":             fmt.Sprintf("altinity/clickhouse-operator:%s", version),
+		"METRICS_EXPORTER_IMAGE":     fmt.Sprintf("altinity/metrics-exporter:%s", version),
+		"OPERATOR_NAMESPACE":         namespace,
+		"METRICS_EXPORTER_NAMESPACE": namespace,
 	})
-	if err != nil {
-		return err
-	}
 
 	k := k8s.GetK8s()
+	var err error
 	if doDelete {
+		// Check if this is the last operator
+		var ops []Operator
+		ops, err = o.getOperators("")
+		if err != nil {
+			return err
+		}
+		if len(ops) == 1 && ops[0].Namespace == namespace {
+			// Delete cluster-wide resources if we're deleting the last operator
+			namespace = ""
+		}
 		err = k.DoDelete(deploy, namespace)
 	} else {
-		err = k.DoApply(deploy, namespace)
+		err = k.DoApply(deploy, namespace, true)
 	}
 	if err != nil {
 		return err

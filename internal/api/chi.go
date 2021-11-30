@@ -81,7 +81,7 @@ func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.R
 		webError(response, http.StatusBadRequest, "reading request body", err)
 		return
 	}
-	err = k8s.GetK8s().DoApply(putParams.YAML, putParams.Namespace)
+	err = k8s.GetK8s().DoApply(putParams.YAML, putParams.Namespace, true)
 	if err != nil {
 		webError(response, http.StatusInternalServerError, "applying CHI", err)
 		return
