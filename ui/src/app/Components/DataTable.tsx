@@ -3,7 +3,7 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import { ReactElement } from 'react';
 import { TdActionsType } from '@patternfly/react-table/dist/js/components/Table/base';
 
-class DataTable extends React.Component<
+export class DataTable extends React.Component<
   {
     data: Array<object>
     columns: Array<string>
@@ -11,9 +11,7 @@ class DataTable extends React.Component<
     actions?: (object) => TdActionsType
     table_variant?: "compact"
     keyPrefix: string
-  },
-  {
-  }> {
+  }, Record<string,never>> {
   render() {
     const menuHeader = this.props.actions ? <Th key="menu"/> : null
     const menuBody = (item: object): ReactElement|null => {
@@ -58,5 +56,3 @@ class DataTable extends React.Component<
     )
   }
 }
-
-export { DataTable }

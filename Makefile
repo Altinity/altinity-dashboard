@@ -35,7 +35,6 @@ embed/version: ui/print-version.js ui/package.json
 embed/chi-examples: $(shell $(LIST_FILES_CMD_PREFIX) clickhouse-operator/docs/chi-examples/ $(LIST_FILES_CMD_SUFFIX))
 	@mkdir -p embed/chi-examples
 	@cp clickhouse-operator/docs/chi-examples/*.yaml embed/chi-examples
-	@(cd embed/chi-examples && ls *.yaml > index.txt)
 
 lint:
 	@ui/.husky/pre-commit

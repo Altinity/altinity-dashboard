@@ -171,8 +171,10 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool) err
 				return err
 			}
 		} else {
+			force := true
 			_, err = dr.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
 				FieldManager: "altinity-dashboard",
+				Force:        &force,
 			})
 			if err != nil {
 				return err

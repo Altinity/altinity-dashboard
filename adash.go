@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/api"
@@ -131,6 +132,32 @@ func main() {
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
 	rc.Add(restfulspec.NewOpenAPIService(config))
 
+	// Create handler for the CHI examples
+	examples, err := embedFiles.ReadDir("embed/chi-examples")
+	if err != nil {
+		panic(err)
+	}
+	exampleStrings := make([]string, 0, len(examples))
+	for _, ex := range examples {
+		if ex.Type().IsRegular() {
+			exampleStrings = append(exampleStrings, ex.Name())
+		}
+	}
+	exampleIndex, err := json.Marshal(exampleStrings)
+	if err != nil {
+		panic(err)
+	}
+	subFilesChi, _ := fs.Sub(embedFiles, "embed/chi-examples")
+	subServerChi := http.StripPrefix("/chi-examples/", http.FileServer(http.FS(subFilesChi)))
+	httpMux.HandleFunc("/chi-examples/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/chi-examples/index.json" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(exampleIndex)
+		} else {
+			subServerChi.ServeHTTP(w, r)
+		}
+	})
+
 	// Create handler for the UI assets
 	subFiles, _ := fs.Sub(uiFiles, "ui/dist")
 	subServer := http.FileServer(http.FS(subFiles))
@@ -145,11 +172,6 @@ func main() {
 			subServer.ServeHTTP(w, r)
 		}
 	})
-
-	// Create handler for the CHI examples
-	subFilesChi, _ := fs.Sub(uiFiles, "embed/chi-examples")
-	subServerChi := http.FileServer(http.FS(subFilesChi))
-	httpMux.Handle("/chi-examples", subServerChi)
 
 	// Start the server
 	bindStr := fmt.Sprintf("%s:%s", *bindHost, *bindPort)

@@ -1,24 +1,21 @@
 import * as React from 'react';
 import {
-  AlertVariant, Bullseye,
-  Button,
+  Alert,
+  AlertVariant,
   ButtonVariant,
-  Grid, GridItem,
-  Modal,
-  ModalVariant,
   PageSection,
   Split,
-  SplitItem, TextInput,
+  SplitItem,
   Title
 } from '@patternfly/react-core';
-import { NamespaceSelector } from '@app/Namespaces/Namespaces';
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { useEffect, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
 import { DataTable } from '@app/Components/DataTable';
 import { AppRoutesProps } from '@app/routes';
-import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
-import chopLogo from '@app/images/altinity-clickhouse-operator-kubernetes.jpg';
+import { ToggleModal } from '@app/Components/ToggleModal';
+import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
+import { NewOperatorModal } from '@app/Operators/NewOperatorModal';
 
 interface OperatorContainer {
   name: string
@@ -41,106 +38,23 @@ interface Operator {
   pods: Array<OperatorPod>
 }
 
-const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (props: ToggleModalSubProps) => {
-  const {addAlert, isModalOpen} = props
-  const [selectedVersion, setSelectedVersion] = useState("")
-  const [selectedNamespace, setSelectedNamespace] = useState("")
-  const closeModal = (): void => {
-    setSelectedVersion("")
-    setSelectedNamespace("")
-    props.closeModal()
-  }
-  const onDeployClick = (): void => {
-    fetch(`/api/v1/operators/${selectedNamespace}`, {
-      method: 'PUT',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        version: selectedVersion
-      })
-    })
-      .then(response => {
-        closeModal()
-        if (!response.ok) {
-          response.text().then(text => {
-            throw Error(`${response.statusText}: ${text}`)
-          })
-        }
-      })
-      .catch(error => {
-        closeModal()
-        addAlert(`Error updating operator: ${error.message}`, AlertVariant.danger)
-      })
-  }
-  return (
-    <Modal
-      title="Deploy ClickHouse Operator"
-      variant={ModalVariant.small}
-      isOpen={isModalOpen}
-      onClose={closeModal}
-      position="top"
-      actions={[
-        <Button key="deploy" variant="primary"
-                onClick={onDeployClick} isDisabled={selectedNamespace === ""}>
-          Deploy
-        </Button>,
-        <Button key="cancel" variant="link" onClick={closeModal}>
-          Cancel
-        </Button>
-      ]}
-    >
-      <Grid hasGutter={true}>
-        <GridItem span={7}>
-          <div>
-            Version (leave blank for latest):
-          </div>
-          <TextInput
-            value={selectedVersion}
-            type="text"
-            onChange={setSelectedVersion}
-          />
-        </GridItem>
-        <GridItem span={5} rowSpan={2}>
-          <Bullseye>
-            <img
-              src={chopLogo}
-              alt="Altinity ClickHouse Operator Logo"
-            />
-          </Bullseye>
-        </GridItem>
-        <GridItem span={7}>
-          Select a Namespace:
-          <NamespaceSelector onSelect={setSelectedNamespace}/>
-        </GridItem>
-      </Grid>
-    </Modal>
-  )
-}
-
-const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
+export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [operators, setOperators] = useState(new Array<Operator>())
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<Operator|undefined>(undefined)
+  const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const addAlert = props.addAlert
   const fetchData = () => {
-    fetch('/api/v1/operators')
-      .then(response => {
-        if (!response.ok) {
-          response.text().then(text => {
-            throw Error(`${response.statusText}: ${text}`)
-          })
-        }
-        return response.json()
+    fetchWithErrorHandling(`/api/v1/operators`, 'GET',
+      undefined,
+      (response, body) => {
+        setOperators(body as Operator[])
+        setRetrieveError(undefined)
+      },
+      (response, text, error) => {
+        const errorMessage = (error == "") ? text : `${error}: ${text}`
+        setRetrieveError(`Error retrieving operators: ${errorMessage}`)
       })
-      .then(res => {
-        setOperators(res as Operator[])
-      })
-      .catch(error => {
-          addAlert(`Error retrieving operators: ${error.message}`, AlertVariant.danger)
-        }
-      )
   }
   useEffect(() => {
     fetchData()
@@ -158,23 +72,15 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
     if (itemToDelete === undefined) {
       return
     }
-    fetch(`/api/v1/operators/${itemToDelete.namespace}`, {
-      method: 'DELETE',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+    fetchWithErrorHandling(`/api/v1/operators/${itemToDelete.namespace}`,
+      'DELETE',
+      undefined,
+      undefined,
+      (response, text, error) => {
+        const errorMessage = (error == "") ? text : `${error}: ${text}`
+        addAlert(`Error deleting operator: ${errorMessage}`, AlertVariant.danger)
       }
-    })
-      .then(response => {
-        if (!response.ok) {
-          response.text().then(text => {
-            throw Error(`${response.statusText}: ${text}`)
-          })
-        }
-      })
-      .catch(error => {
-        addAlert(`Error deleting operator: ${error.message}`, AlertVariant.danger)
-      })
+    )
   }
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false)
@@ -183,6 +89,9 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
   const onUpgradeClick = (item: Operator) => {
     addAlert(`Upgrade of ${item.name} not implemented yet`, AlertVariant.warning)
   }
+  const retrieveErrorPane = retrieveError === undefined ? null : (
+    <Alert variant="danger" title={retrieveError} isInline/>
+  )
   return (
     <PageSection>
       <SimpleModal
@@ -209,6 +118,7 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
           />
         </SplitItem>
       </Split>
+      {retrieveErrorPane}
       <ExpandableTable
         keyPrefix="operators"
         data={operators}
@@ -251,5 +161,3 @@ const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProp
     </PageSection>
   )
 }
-
-export { Operators };

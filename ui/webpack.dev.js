@@ -16,6 +16,7 @@ module.exports = merge(common('development'), {
     open: true,
     proxy: {
         '/api': 'http://localhost:8080',
+        '/chi-examples': 'http://localhost:8080',
     },
   },
   module: {

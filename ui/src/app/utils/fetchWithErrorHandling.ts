@@ -1,5 +1,5 @@
 export function fetchWithErrorHandling(url: string, method: string, body?: object,
-                                       onSuccess?: (response: Response, body: object|undefined) => void,
+                                       onSuccess?: (response: Response, body: object|string|undefined) => void,
                                        onFailure?: (response: Response, text: string, error: string) => void)
 {
   const fetchInit: RequestInit = {
@@ -14,6 +14,7 @@ export function fetchWithErrorHandling(url: string, method: string, body?: objec
   }
   let response: Response
   let text: string
+  let responseBody: object|string|undefined
   fetch(url, fetchInit)
   .then(resp => {
     response = resp
@@ -25,16 +26,17 @@ export function fetchWithErrorHandling(url: string, method: string, body?: objec
       throw Error()
     }
     try {
-      if (text) {
-        body = JSON.parse(text)
+      const content_type = response.headers.get("content-type")
+      if (text && content_type && content_type.includes("application/json")) {
+        responseBody = JSON.parse(text)
       } else {
-        body = {}
+        responseBody = text
       }
     } catch {
       throw Error(`JSON parsing error`)
     }
     if (onSuccess) {
-      onSuccess(response, body)
+      onSuccess(response, responseBody)
     }
   })
   .catch(error => {

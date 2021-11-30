@@ -1,3 +1,6 @@
 html, body, #root {
   height: 100%;
 }
+.wide-context-selector .pf-c-context-selector {
+  --pf-c-context-selector--Width: 30rem
+}
