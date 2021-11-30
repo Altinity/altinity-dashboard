@@ -53,9 +53,30 @@ jobs:
       - name: Build adash
         run: make adash
 
-#       - name: Upload artifact
-#         uses: actions/upload-artifact@v2
-#         with:
-#           name: Altinity Dashboard
-#           path: adash
+      - name: Build container image
+        run: docker build . -t altinity-dashboard:latest
+
+      - name: Log in to GitHub registry
+        if: github.ref == 'ref/head/main'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata for container image
+        if: github.ref == 'ref/head/main'
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ghcr.io/altinity-dashboard
+
+      - name: Push to GitHub registry
+        if: github.ref == 'ref/head/main'
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 

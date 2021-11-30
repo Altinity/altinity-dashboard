@@ -1,16 +1,7 @@
-FROM golang:1.17.3-bullseye as builder
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-RUN apt update
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
-RUN apt install -y git make nodejs
+COPY adash /bin/adash
 
-WORKDIR /app
-COPY . .
+EXPOSE 8080/tcp
 
-RUN make adash
-
-FROM debian:bullseye
-
-COPY --from=builder /app/adash /bin/adash
-
-ENTRYPOINT ["/bin/adash"]
+CMD ["/bin/adash"]

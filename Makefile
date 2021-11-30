@@ -8,12 +8,12 @@ LIST_FILES_CMD_SUFFIX := -type f
 endif
 
 adash: adash.go ui/dist embed $(shell $(LIST_FILES_CMD_PREFIX) internal $(LIST_FILES_CMD_SUFFIX))
-	@go build adash.go
+	@CGO_ENABLED=0 go build adash.go
 
 ui: ui/dist
 
 ui/dist: $(shell $(LIST_FILES_CMD_PREFIX) ui $(LIST_FILES_CMD_SUFFIX))
-	@cd ui && npm install --legacy-peer-deps && npm run build
+	@cd ui && npm ci && npm run build
 	@touch ui/dist
 
 ui-devel: adash
