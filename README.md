@@ -2,19 +2,16 @@
 
 This is a preliminary version of the Altinity Dashboard.  It is used for viewing and managing Kubernetes-based ClickHouse installations controlled by [clickhouse-operator](https://github.com/altinity/clickhouse-operator).
 
-### Running from GitHub builds
+### Running the container image from the GitHub Container Registry
 
-There are no stable releases of this yet.  The current development build is available as a GitHub Actions artifact.  To use this:
+There are no stable releases of this yet.  The most recent successful commit to the main branch is built as a container image and stored on the GitHub Container Registry.  To use this:
 
-* Go to [Actions](https://github.com/Altinity/altinity-dashboard/actions).
-* Click on a recent workflow run where the build succeeded (ie, has a green checkmark).
-  * Choose one from the `main` branch unless you're specifically trying to run code from a pull request.
-* Download the Altinity Dashboard artifact from the bottom of the page.
-* Extract the `adash` file from the downloaded zip file.
-* Make it executable with `chmod a+x adash`.
-* Run it with `./adash`.
-
-By default, adash will try to connect to the first Kubernetes instance defined in your `~/.kube/config` file.  You can provide a different kubeconfig, or use in-cluster authentication, using command-line parameters.  For more information about the CLI, see `adash --help`.
+* Create a GitHub Personal Access Token with at least read:packages access.
+* Run `docker login ghcr.io` and log in using your username and PAT.
+* Run `docker pull docker pull ghcr.io/altinity/altinity-dashboard:main` to get the latest development build of the container.
+* Run `docker run -it --rm ghcr.io/altinity/altinity-dashboard:main adash --help`.  If everything is working, you should see command-line help.
+* If you run this container inside Kubernetes, it should perform in-cluster auth.
+* To run it outside Kubernetes, you will need to volume mount a kubeconfig file and use `-kubeconfig` to point to it.
 
 ### Building from source
 
