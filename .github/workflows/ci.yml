@@ -57,27 +57,22 @@ jobs:
         run: docker build . -t altinity-dashboard:latest
 
       - name: Log in to GitHub registry
-        if: github.ref == 'ref/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Show variables
-        run: |
-          echo "github.ref = ${{ github.ref }}"
-          echi "github.event_name = ${{ github.event_name }}"
-      
       - name: Extract metadata for container image
-        if: github.ref == 'ref/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: meta
         uses: docker/metadata-action@v3
         with:
           images: ghcr.io/altinity-dashboard
 
       - name: Push to GitHub registry
-        if: github.ref == 'ref/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/build-push-action@v2
         with:
           context: .
