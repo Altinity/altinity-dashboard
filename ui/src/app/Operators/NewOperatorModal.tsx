@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { useState } from 'react';
-import { AlertVariant, Bullseye, Button, Grid, GridItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
-import chopLogo from '@app/images/altinity-clickhouse-operator-kubernetes.jpg';
+import { AlertVariant, Button, Grid, GridItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
 import { NamespaceSelector } from '@app/Namespaces/NamespaceSelector';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 
@@ -58,12 +57,6 @@ export const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (p
           />
         </GridItem>
         <GridItem span={5} rowSpan={2}>
-          <Bullseye>
-            <img
-              src={chopLogo}
-              alt="Altinity ClickHouse Operator Logo"
-            />
-          </Bullseye>
         </GridItem>
         <GridItem span={7}>
           Select a Namespace:
