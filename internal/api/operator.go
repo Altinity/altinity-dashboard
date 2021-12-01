@@ -81,7 +81,7 @@ func (o *OperatorResource) getOperatorPodsFromDeployment(namespace string, deplo
 			}
 		}
 		list = append(list, OperatorPod{
-			Pod:     Pod{
+			Pod: Pod{
 				Name:       pod.Name,
 				Status:     string(pod.Status.Phase),
 				Containers: getContainersFromPod(pod),

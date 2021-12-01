@@ -68,9 +68,9 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	list := make([]Chi, 0, len(chis.Items))
 	for _, chi := range chis.Items {
 		chClusters := make([]CHCluster, 0)
-		_ = chi.WalkClusters(func (cluster *chopv1.ChiCluster) error {
+		_ = chi.WalkClusters(func(cluster *chopv1.ChiCluster) error {
 			chClusterPods := make([]Pod, 0)
-			_ = cluster.WalkHosts(func (host *chopv1.ChiHost) error {
+			_ = cluster.WalkHosts(func(host *chopv1.ChiHost) error {
 				pods, err := getK8sPodsFromLabelSelector("", host.CurStatefulSet.Spec.Selector)
 				if err != nil {
 					return err
