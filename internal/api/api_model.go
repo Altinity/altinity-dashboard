@@ -4,6 +4,18 @@ type Namespace struct {
 	Name string `json:"name" description:"name of the namespace"`
 }
 
+type Pod struct {
+	Name       string              `json:"name" description:"name of the pod"`
+	Status     string      `json:"status" description:"status of the pod"`
+	Containers []Container `json:"containers" description:"containers in the pod"`
+}
+
+type Container struct {
+	Name  string `json:"name" description:"name of the container"`
+	State string `json:"state" description:"status of the container"`
+	Image string `json:"image" description:"image used by the container"`
+}
+
 type Operator struct {
 	Name       string        `json:"name" description:"name of the operator"`
 	Namespace  string        `json:"namespace" description:"namespace the operator is in"`
@@ -13,16 +25,8 @@ type Operator struct {
 }
 
 type OperatorPod struct {
-	Name       string              `json:"name" description:"name of the pod"`
-	Status     string              `json:"status" description:"status of the pod"`
+	Pod
 	Version    string              `json:"version" description:"version of the pod"`
-	Containers []OperatorContainer `json:"containers" description:"containers in the pod"`
-}
-
-type OperatorContainer struct {
-	Name  string `json:"name" description:"name of the container"`
-	State string `json:"state" description:"status of the container"`
-	Image string `json:"image" description:"image used by the container"`
 }
 
 type Chi struct {
@@ -31,6 +35,12 @@ type Chi struct {
 	Status    string `json:"status" description:"status of the installation"`
 	Clusters  int    `json:"clusters" description:"number of clusters in the installation"`
 	Hosts     int    `json:"hosts" description:"number of hosts in the installation"`
+	CHClusters []CHCluster `json:"ch_clusters" description:"ClickHouse cluster details"`
+}
+
+type CHCluster struct {
+	Name string `json:"name" description:"name of the ClickHouse cluster"`
+	Pods []Pod  `json:"pods" description:"pods in the ClickHouse cluster"`
 }
 
 type Dashboard struct {

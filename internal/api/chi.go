@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
+	chopv1 "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	"github.com/emicklei/go-restful/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
@@ -66,12 +67,30 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	}
 	list := make([]Chi, 0, len(chis.Items))
 	for _, chi := range chis.Items {
+		chClusters := make([]CHCluster, 0)
+		_ = chi.WalkClusters(func (cluster *chopv1.ChiCluster) error {
+			chClusterPods := make([]Pod, 0)
+			_ = cluster.WalkHosts(func (host *chopv1.ChiHost) error {
+				pods, err := getK8sPodsFromLabelSelector("", host.CurStatefulSet.Spec.Selector)
+				if err != nil {
+					return err
+				}
+				chClusterPods = append(chClusterPods, getPodsFromK8sPods(pods)...)
+				return nil
+			})
+			chClusters = append(chClusters, CHCluster{
+				Name: cluster.Name,
+				Pods: chClusterPods,
+			})
+			return nil
+		})
 		list = append(list, Chi{
-			Name:      chi.Name,
-			Namespace: chi.Namespace,
-			Status:    chi.Status.Status,
-			Clusters:  chi.Status.ClustersCount,
-			Hosts:     chi.Status.HostsCount,
+			Name:       chi.Name,
+			Namespace:  chi.Namespace,
+			Status:     chi.Status.Status,
+			Clusters:   chi.Status.ClustersCount,
+			Hosts:      chi.Status.HostsCount,
+			CHClusters: chClusters,
 		})
 	}
 	_ = response.WriteEntity(list)

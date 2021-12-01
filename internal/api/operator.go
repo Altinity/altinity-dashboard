@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"net/http"
 	"strings"
 	"time"
@@ -66,39 +65,8 @@ func (o *OperatorResource) WebService(wsi *WebServiceInfo) (*restful.WebService,
 	return ws, nil
 }
 
-func (o *OperatorResource) getContainersFromPod(pod corev1.Pod) []OperatorContainer {
-	cs := pod.Status.ContainerStatuses
-	list := make([]OperatorContainer, 0, len(cs))
-	for _, c := range cs {
-		state := "Unknown"
-		switch {
-		case c.State.Terminated != nil:
-			state = "Terminated"
-		case c.State.Running != nil:
-			state = "Running"
-		case c.State.Waiting != nil:
-			state = "Waiting"
-		}
-		list = append(list, OperatorContainer{
-			Name:  c.Name,
-			State: state,
-			Image: c.Image,
-		})
-	}
-	return list
-}
-
-func (o *OperatorResource) getPodsFromDeployment(namespace string, deployment appsv1.Deployment) ([]OperatorPod, error) {
-	s := deployment.Spec.Selector
-	ls, err := metav1.LabelSelectorAsMap(s)
-	if err != nil {
-		return nil, err
-	}
-	pods, err := k8s.GetK8s().Clientset.CoreV1().Pods(namespace).List(context.TODO(),
-		metav1.ListOptions{
-			LabelSelector: labels.SelectorFromSet(ls).String(),
-		},
-	)
+func (o *OperatorResource) getOperatorPodsFromDeployment(namespace string, deployment appsv1.Deployment) ([]OperatorPod, error) {
+	pods, err := getK8sPodsFromLabelSelector(namespace, deployment.Spec.Selector)
 	if err != nil {
 		return nil, err
 	}
@@ -113,10 +81,12 @@ func (o *OperatorResource) getPodsFromDeployment(namespace string, deployment ap
 			}
 		}
 		list = append(list, OperatorPod{
-			Name:       pod.Name,
-			Status:     string(pod.Status.Phase),
-			Version:    ver,
-			Containers: o.getContainersFromPod(pod),
+			Pod:     Pod{
+				Name:       pod.Name,
+				Status:     string(pod.Status.Phase),
+				Containers: getContainersFromPod(pod),
+			},
+			Version: ver,
 		})
 	}
 	return list, nil
@@ -153,7 +123,8 @@ func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
 				ver = "unknown"
 			}
 		}
-		pods, err := o.getPodsFromDeployment(deployment.Namespace, deployment)
+		var pods []OperatorPod
+		pods, err = o.getOperatorPodsFromDeployment(deployment.Namespace, deployment)
 		if err != nil {
 			return nil, err
 		}

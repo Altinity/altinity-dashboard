@@ -17,7 +17,7 @@ import { ToggleModal } from '@app/Components/ToggleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewOperatorModal } from '@app/Operators/NewOperatorModal';
 
-interface OperatorContainer {
+interface Container {
   name: string
   state: string
   image: string
@@ -27,7 +27,7 @@ interface OperatorPod {
   name: string
   status: string
   version: string
-  containers: Array<OperatorContainer>
+  containers: Array<Container>
 }
 
 interface Operator {

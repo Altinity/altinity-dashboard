@@ -15,13 +15,32 @@ import { ToggleModal } from '@app/Components/ToggleModal';
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewCHIModal } from '@app/CHIs/NewCHIModal';
+import { ExpandableTable } from '@app/Components/ExpandableTable';
+
+interface Container {
+  name: string
+  state: string
+  image: string
+}
+
+interface Pod {
+  name: string
+  status: string
+  containers: Array<Container>
+}
+
+interface CHCluster {
+  name: string
+  pods: Array<Pod>
+}
 
 interface CHI {
   name: string
   namespace: string
   status: string
-  Clusters: bigint
-  Hosts: bigint
+  clusters: bigint
+  hosts: bigint
+  ch_clusters: Array<CHCluster>
 }
 
 export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
@@ -102,23 +121,49 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
         </SplitItem>
       </Split>
       {retrieveErrorPane}
-      <DataTable
+      <ExpandableTable
         keyPrefix="CHIs"
         data={CHIs}
         columns={['Name', 'Namespace', 'Status', 'Clusters', 'Hosts']}
         column_fields={['name', 'namespace', 'status', 'clusters', 'hosts']}
         actions={(item: CHI) => {
-        return {
-          items: [
-            {
-              title: "Delete",
-              variant: "danger",
-              onClick: () => {onDeleteClick(item)}
-            },
-          ]
-        }
-      }}
-
+          return {
+            items: [
+              {
+                title: "Delete",
+                variant: "danger",
+                onClick: () => {onDeleteClick(item)}
+              },
+            ]
+          }
+        }}
+        expanded_content={(data) => (
+          <ExpandableTable
+            keyPrefix="CHI-clusters"
+            table_variant="compact"
+            data={data.ch_clusters}
+            columns={['Cluster']}
+            column_fields={['name']}
+            expanded_content={(data) => (
+              <ExpandableTable
+                table_variant="compact"
+                keyPrefix="CHI-pods"
+                data={data.pods}
+                columns={['Pod', 'Status']}
+                column_fields={['name', 'status']}
+                expanded_content={(data) => (
+                  <DataTable
+                    table_variant="compact"
+                    keyPrefix="operator-containers"
+                    data={data.containers}
+                    columns={['Container', 'State', 'Image']}
+                    column_fields={['name', 'state', 'image']}
+                  />
+                )}
+              />
+            )}
+          />
+        )}
       />
     </PageSection>
   )
