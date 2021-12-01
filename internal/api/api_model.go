@@ -32,3 +32,14 @@ type Chi struct {
 	Clusters  int    `json:"clusters" description:"number of clusters in the installation"`
 	Hosts     int    `json:"hosts" description:"number of hosts in the installation"`
 }
+
+type Dashboard struct {
+	Version            string `json:"version" description:"altinity-dashboard version"`
+	CHOPVersion        string `json:"chop_version" description:"clickhouse-operator version"`
+	KubeCluster        string `json:"kube_cluster" description:"kubernetes cluster name"`
+	KubeVersion        string `json:"kube_version" description:"kubernetes cluster version"`
+	ChopCount          int    `json:"chop_count" description:"number of clickhouse-operators deployed"`
+	ChopCountAvailable int    `json:"chop_count_available" description:"number of clickhouse-operators available"`
+	ChiCount           int    `json:"chi_count" description:"number of ClickHouse Installations deployed"`
+	ChiCountComplete   int    `json:"chi_count_complete" description:"number of ClickHouse Installations completed"`
+}

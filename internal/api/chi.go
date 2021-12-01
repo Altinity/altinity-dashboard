@@ -24,8 +24,13 @@ type ChiDeleteParams struct {
 	ChiName   string `json:"chi_name" description:"name op the CHI to delete"`
 }
 
+// Name returns the name of the web service
+func (c *ChiResource) Name() string {
+	return "ClickHouse Instances"
+}
+
 // WebService creates a new service that can handle REST requests
-func (c *ChiResource) WebService() *restful.WebService {
+func (c *ChiResource) WebService(wsi *WebServiceInfo) (*restful.WebService, error) {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/chis").
@@ -49,10 +54,9 @@ func (c *ChiResource) WebService() *restful.WebService {
 		Reads(ChiDeleteParams{}).
 		Returns(200, "OK", nil))
 
-	return ws
+	return ws, nil
 }
 
-// GET http://localhost:8080/chis
 func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
 	chis, err := k8s.GetK8s().ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
 		context.TODO(), metav1.ListOptions{})
@@ -73,7 +77,6 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	_ = response.WriteEntity(list)
 }
 
-// PUT http://localhost:8080/chis
 func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.Response) {
 	putParams := ChiPutParams{}
 	err := request.ReadEntity(&putParams)
@@ -89,7 +92,6 @@ func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.R
 	_ = response.WriteEntity(nil)
 }
 
-// DELETE http://localhost:8080/chis
 func (c *ChiResource) handleDeleteCHI(request *restful.Request, response *restful.Response) {
 	deleteParams := ChiDeleteParams{}
 	err := request.ReadEntity(&deleteParams)

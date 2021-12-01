@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
@@ -13,8 +13,13 @@ import (
 type NamespaceResource struct {
 }
 
+// Name returns the name of the web service
+func (n *NamespaceResource) Name() string {
+	return "Namespaces"
+}
+
 // WebService creates a new service that can handle REST requests
-func (n *NamespaceResource) WebService() *restful.WebService {
+func (n *NamespaceResource) WebService(wsi *WebServiceInfo) (*restful.WebService, error) {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/namespaces").
@@ -30,10 +35,9 @@ func (n *NamespaceResource) WebService() *restful.WebService {
 		Doc("create a namespace").
 		Reads(Namespace{})) // from the request
 
-	return ws
+	return ws, nil
 }
 
-// GET http://localhost:8080/namespaces
 func (n *NamespaceResource) getNamespaces(request *restful.Request, response *restful.Response) {
 	namespaces, err := k8s.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -49,7 +53,6 @@ func (n *NamespaceResource) getNamespaces(request *restful.Request, response *re
 	_ = response.WriteEntity(list)
 }
 
-// PUT http://localhost:8080/namespaces
 func (n *NamespaceResource) createNamespace(request *restful.Request, response *restful.Response) {
 	namespace := new(Namespace)
 	err := request.ReadEntity(&namespace)

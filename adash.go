@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
-	rand "crypto/rand"
+	"crypto/rand"
 	"embed"
 	"encoding/base64"
 	"encoding/json"
@@ -156,15 +156,23 @@ func main() {
 	// Create API handlers & docs
 	rc := restful.NewContainer()
 	rc.ServeMux = httpMux
-	rc.Add((&api.NamespaceResource{}).WebService())
-	var ows *restful.WebService
-	ows, err = (&api.OperatorResource{}).WebService(&embedFiles)
-	if err != nil {
-		fmt.Printf("Error initializing operator web service: %s\n", err)
-		os.Exit(1)
+	wsi := api.WebServiceInfo{
+		Embed: &embedFiles,
 	}
-	rc.Add(ows)
-	rc.Add((&api.ChiResource{}).WebService())
+	for _, resource := range []api.WebService{
+		&api.DashboardResource{},
+		&api.NamespaceResource{},
+		&api.OperatorResource{},
+		&api.ChiResource{},
+	} {
+		var ws *restful.WebService
+		ws, err = resource.WebService(&wsi)
+		if err != nil {
+			fmt.Printf("Error initializing %s web service: %s\n", resource.Name(), err)
+			os.Exit(1)
+		}
+		rc.Add(ws)
+	}
 	config := restfulspec.Config{
 		WebServices:                   rc.RegisteredWebServices(), // you control what services are visible
 		APIPath:                       "/apidocs.json",

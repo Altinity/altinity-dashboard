@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	"github.com/emicklei/go-restful/v3"
@@ -19,7 +18,7 @@ import (
 // OperatorResource is the REST layer to Pods
 type OperatorResource struct {
 	opDeployTemplate string
-	release          string
+	chopRelease      string
 }
 
 // OperatorPutParams is the object for parameters to an operator PUT request
@@ -27,19 +26,20 @@ type OperatorPutParams struct {
 	Version string `json:"version" description:"version of clickhouse-operator to deploy"`
 }
 
-// WebService creates a new service that can handle REST requests
-func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService, error) {
-	fileData, err := chopFiles.ReadFile("embed/chop-release")
-	if err != nil {
-		return nil, err
-	}
-	o.release = strings.TrimSpace(string(fileData))
+// Name returns the name of the web service
+func (o *OperatorResource) Name() string {
+	return "Operators"
+}
 
-	fileData, err = chopFiles.ReadFile("embed/clickhouse-operator-install-template.yaml")
+// WebService creates a new service that can handle REST requests
+func (o *OperatorResource) WebService(wsi *WebServiceInfo) (*restful.WebService, error) {
+	err := readFilesToStrings(wsi.Embed, []FileToString{
+		{"embed/chop-release", &o.chopRelease},
+		{"embed/clickhouse-operator-install-template.yaml", &o.opDeployTemplate},
+	})
 	if err != nil {
 		return nil, err
 	}
-	o.opDeployTemplate = string(fileData)
 
 	ws := new(restful.WebService)
 	ws.
@@ -66,7 +66,6 @@ func (o *OperatorResource) WebService(chopFiles *embed.FS) (*restful.WebService,
 	return ws, nil
 }
 
-// getContainersFromPod gets a list of OperatorContainers from a pod
 func (o *OperatorResource) getContainersFromPod(pod corev1.Pod) []OperatorContainer {
 	cs := pod.Status.ContainerStatuses
 	list := make([]OperatorContainer, 0, len(cs))
@@ -89,7 +88,6 @@ func (o *OperatorResource) getContainersFromPod(pod corev1.Pod) []OperatorContai
 	return list
 }
 
-// getPodsFromDeployment gets a list of OperatorPods from a deployment
 func (o *OperatorResource) getPodsFromDeployment(namespace string, deployment appsv1.Deployment) ([]OperatorPod, error) {
 	s := deployment.Spec.Selector
 	ls, err := metav1.LabelSelectorAsMap(s)
@@ -124,7 +122,6 @@ func (o *OperatorResource) getPodsFromDeployment(namespace string, deployment ap
 	return list, nil
 }
 
-// Get a list of running clickhouse-operators
 func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
 	deployments, err := k8s.GetK8s().Clientset.AppsV1().Deployments(namespace).List(
 		context.TODO(), metav1.ListOptions{
@@ -171,7 +168,6 @@ func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
 	return list, nil
 }
 
-// GET http://localhost:8080/operators
 func (o *OperatorResource) handleGetOps(request *restful.Request, response *restful.Response) {
 	ops, err := o.getOperators("")
 	if err != nil {
@@ -192,7 +188,7 @@ func processTemplate(template string, vars map[string]string) string {
 // deployOrDeleteOperator deploys or deletes a clickhouse-operator
 func (o *OperatorResource) deployOrDeleteOperator(namespace string, version string, doDelete bool) error {
 	if version == "" {
-		version = o.release
+		version = o.chopRelease
 	}
 	deploy := processTemplate(o.opDeployTemplate, map[string]string{
 		"OPERATOR_IMAGE":             fmt.Sprintf("altinity/clickhouse-operator:%s", version),
@@ -243,7 +239,6 @@ func (o *OperatorResource) waitForOperator(namespace string, timeout time.Durati
 	}
 }
 
-// PUT http://localhost:8080/operators
 func (o *OperatorResource) handlePutOp(request *restful.Request, response *restful.Response) {
 	namespace := request.PathParameter("namespace")
 	if namespace == "" {
@@ -270,7 +265,6 @@ func (o *OperatorResource) handlePutOp(request *restful.Request, response *restf
 	_ = response.WriteEntity(op)
 }
 
-// DELETE http://localhost:8080/operators
 func (o *OperatorResource) handleDeleteOp(request *restful.Request, response *restful.Response) {
 	namespace := request.PathParameter("namespace")
 	if namespace == "" {
