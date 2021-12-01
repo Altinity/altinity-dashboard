@@ -69,15 +69,18 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	for _, chi := range chis.Items {
 		chClusters := make([]CHCluster, 0)
 		_ = chi.WalkClusters(func(cluster *chopv1.ChiCluster) error {
-			chClusterPods := make([]Pod, 0)
-			_ = cluster.WalkHosts(func(host *chopv1.ChiHost) error {
-				pods, err := getK8sPodsFromLabelSelector("", host.CurStatefulSet.Spec.Selector)
-				if err != nil {
-					return err
-				}
-				chClusterPods = append(chClusterPods, getPodsFromK8sPods(pods)...)
-				return nil
-			})
+			var chClusterPods []Pod
+			sel := &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"clickhouse.altinity.com/chi":     chi.Name,
+					"clickhouse.altinity.com/cluster": cluster.Name,
+				},
+				MatchExpressions: nil,
+			}
+			pods, err := getK8sPodsFromLabelSelector(chi.Namespace, sel)
+			if err == nil {
+				chClusterPods = getPodsFromK8sPods(pods)
+			}
 			chClusters = append(chClusters, CHCluster{
 				Name: cluster.Name,
 				Pods: chClusterPods,
