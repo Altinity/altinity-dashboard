@@ -62,7 +62,7 @@ func main() {
 	kubeconfig := cmdFlags.String("kubeconfig", "", "path to the kubeconfig file")
 	devMode := cmdFlags.Bool("devmode", false, "show Developer Tools tab")
 	bindHost := cmdFlags.String("bindhost", "localhost", "host to bind to (use 0.0.0.0 for all interfaces)")
-	bindPort := cmdFlags.String("bindport", "8080", "port to listen on")
+	bindPort := cmdFlags.String("bindport", "", "port to listen on")
 	tlsCert := cmdFlags.String("tlscert", "", "certificate file to use to serve TLS")
 	tlsKey := cmdFlags.String("tlskey", "", "private key file to use to serve TLS")
 	selfSigned := cmdFlags.Bool("selfsigned", false, "run TLS using self-signed key")
@@ -127,6 +127,17 @@ func main() {
 		}
 		tlsCert = &cert
 		tlsKey = &key
+	}
+
+	// Determine default port, if one was not specified
+	if *bindPort == "" {
+		var port string
+		if *tlsCert != "" {
+			port = "8443"
+		} else {
+			port = "8080"
+		}
+		bindPort = &port
 	}
 
 	// Read the index.html from the bundled assets and update its devmode flag
