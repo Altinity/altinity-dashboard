@@ -25,8 +25,7 @@ interface DashboardInfo {
   chi_count_complete: number
 }
 
-
-const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
+export const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
   const [dashboardInfo, setDashboardInfo] = useState<DashboardInfo|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const fetchData = () => {
@@ -143,5 +142,3 @@ const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
     </PageSection>
   )
 }
-
-export { Dashboard };

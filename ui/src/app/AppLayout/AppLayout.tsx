@@ -17,7 +17,7 @@ interface IAppLayout {
   children: React.ReactNode;
 }
 
-const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
+export const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
   const [isNavOpen, setIsNavOpen] = React.useState(true);
   const [isMobileView, setIsMobileView] = React.useState(true);
   const [isNavOpenMobile, setIsNavOpenMobile] = React.useState(false);
@@ -106,5 +106,3 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
     </Page>
   );
 }
-
-export { AppLayout };

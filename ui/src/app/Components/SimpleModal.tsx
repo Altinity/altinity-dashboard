@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Button, ButtonVariant, ModalVariant } from '@patternfly/react-core';
 
-class SimpleModal extends React.Component<
+export class SimpleModal extends React.Component<
   {
     title: string
     actionButtonText: string
@@ -61,5 +61,3 @@ class SimpleModal extends React.Component<
     );
   }
 }
-
-export { SimpleModal }

@@ -3,7 +3,7 @@ import { ExpandableRowContent, TableComposable, Tbody, Td, Th, Thead, Tr } from 
 import { ReactElement } from 'react';
 import { TdActionsType } from '@patternfly/react-table/dist/js/components/Table/base';
 
-class ExpandableTable extends React.Component<
+export class ExpandableTable extends React.Component<
   {
     data: Array<object>
     columns: Array<string>
@@ -96,5 +96,3 @@ class ExpandableTable extends React.Component<
     )
   }
 }
-
-export { ExpandableTable }

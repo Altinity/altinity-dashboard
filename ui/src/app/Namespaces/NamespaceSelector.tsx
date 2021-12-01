@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { ListSelector } from '@app/Components/ListSelector';
 
-interface Namespace {
+export interface Namespace {
   name: string
 }
 
-const NamespaceSelector: React.FunctionComponent<
+export const NamespaceSelector: React.FunctionComponent<
   {
     onSelect?: (selected: string) => void
   }> = (props) => {
@@ -38,5 +38,3 @@ const NamespaceSelector: React.FunctionComponent<
     />
   )
 }
-
-export { Namespace, NamespaceSelector };
