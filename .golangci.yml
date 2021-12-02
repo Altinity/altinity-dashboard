@@ -45,7 +45,7 @@ linters:
     - makezero
     - misspell
     - nakedret
-    - nestif
+    # - nestif
     - nilerr
     # - nlreturn
     - noctx

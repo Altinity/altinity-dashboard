@@ -9,8 +9,7 @@ import {
   Title
 } from '@patternfly/react-core';
 import { AppRoutesProps } from '@app/routes';
-import { useEffect, useState } from 'react';
-import { DataTable } from '@app/Components/DataTable';
+import { ReactElement, useEffect, useState } from 'react';
 import { ToggleModal } from '@app/Components/ToggleModal';
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
@@ -40,6 +39,7 @@ interface CHI {
   status: string
   clusters: bigint
   hosts: bigint
+  external_url: string
   ch_clusters: Array<CHCluster>
 }
 
@@ -126,6 +126,18 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
         data={CHIs}
         columns={['Name', 'Namespace', 'Status', 'Clusters', 'Hosts']}
         column_fields={['name', 'namespace', 'status', 'clusters', 'hosts']}
+        data_modifier={(data: object, field: string): ReactElement|string => {
+          if (field === "name" && "external_url" in data && data["external_url"]) {
+            return (
+              <a target="_blank" rel="noreferrer"
+                 href={new URL("/play", data["external_url"]).href}>
+                {data["name"]}
+              </a>
+            )
+          } else {
+            return data[field]
+          }
+        }}
         actions={(item: CHI) => {
           return {
             items: [
@@ -152,7 +164,7 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
                 columns={['Pod', 'Status']}
                 column_fields={['name', 'status']}
                 expanded_content={(data) => (
-                  <DataTable
+                  <ExpandableTable
                     table_variant="compact"
                     keyPrefix="operator-containers"
                     data={data.containers}

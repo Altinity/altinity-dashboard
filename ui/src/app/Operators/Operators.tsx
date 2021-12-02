@@ -11,7 +11,6 @@ import {
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { useEffect, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
-import { DataTable } from '@app/Components/DataTable';
 import { AppRoutesProps } from '@app/routes';
 import { ToggleModal } from '@app/Components/ToggleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
@@ -148,7 +147,7 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
             columns={['Pod', 'Status', 'Version']}
             column_fields={['name', 'status', 'version']}
             expanded_content={(data) => (
-              <DataTable table_variant="compact"
+              <ExpandableTable table_variant="compact"
                 keyPrefix="operator-containers"
                 data={data.containers}
                 columns={['Container', 'State', 'Image']}

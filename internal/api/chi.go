@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/k8s"
 	chopv1 "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	"github.com/emicklei/go-restful/v3"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 )
@@ -59,7 +61,8 @@ func (c *ChiResource) WebService(wsi *WebServiceInfo) (*restful.WebService, erro
 }
 
 func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
-	chis, err := k8s.GetK8s().ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
+	k := k8s.GetK8s()
+	chis, err := k.ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
 		context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		webError(response, http.StatusBadRequest, "listing CHIs", err)
@@ -87,13 +90,47 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 			})
 			return nil
 		})
+		var externalURL string
+		var services *v1.ServiceList
+		services, err = getK8sServicesFromLabelSelector("", &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"clickhouse.altinity.com/chi": chi.Name,
+			},
+		})
+		if err == nil {
+			for _, svc := range services.Items {
+				if _, ok := svc.Labels["clickhouse.altinity.com/cluster"]; !ok && svc.Spec.Type == "LoadBalancer" {
+					for _, ing := range svc.Status.LoadBalancer.Ingress {
+						externalHost := ""
+						if ing.Hostname != "" {
+							externalHost = ing.Hostname
+						} else if ing.IP != "" {
+							externalHost = ing.IP
+						}
+						if externalHost == "" {
+							continue
+						}
+						for _, port := range svc.Spec.Ports {
+							if port.Name == "http" {
+								externalURL = fmt.Sprintf("http://%s:%d", externalHost, port.Port)
+								break
+							}
+						}
+						if externalURL != "" {
+							break
+						}
+					}
+				}
+			}
+		}
 		list = append(list, Chi{
-			Name:       chi.Name,
-			Namespace:  chi.Namespace,
-			Status:     chi.Status.Status,
-			Clusters:   chi.Status.ClustersCount,
-			Hosts:      chi.Status.HostsCount,
-			CHClusters: chClusters,
+			Name:        chi.Name,
+			Namespace:   chi.Namespace,
+			Status:      chi.Status.Status,
+			Clusters:    chi.Status.ClustersCount,
+			Hosts:       chi.Status.HostsCount,
+			ExternalURL: externalURL,
+			CHClusters:  chClusters,
 		})
 	}
 	_ = response.WriteEntity(list)
