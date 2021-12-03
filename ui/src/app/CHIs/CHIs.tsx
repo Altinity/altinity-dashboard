@@ -22,15 +22,11 @@ interface Container {
   image: string
 }
 
-interface Pod {
+interface CHClusterPod {
+  cluster_name: string
   name: string
   status: string
   containers: Array<Container>
-}
-
-interface CHCluster {
-  name: string
-  pods: Array<Pod>
 }
 
 interface CHI {
@@ -40,7 +36,7 @@ interface CHI {
   clusters: bigint
   hosts: bigint
   external_url: string
-  ch_clusters: Array<CHCluster>
+  ch_cluster_pods: Array<CHClusterPod>
 }
 
 export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
@@ -151,27 +147,18 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
         }}
         expanded_content={(data) => (
           <ExpandableTable
-            keyPrefix="CHI-clusters"
             table_variant="compact"
-            data={data.ch_clusters}
-            columns={['Cluster']}
-            column_fields={['name']}
+            keyPrefix="CHI-pods"
+            data={data.ch_cluster_pods}
+            columns={['Cluster', 'Pod', 'Status']}
+            column_fields={['cluster_name', 'name', 'status']}
             expanded_content={(data) => (
               <ExpandableTable
                 table_variant="compact"
-                keyPrefix="CHI-pods"
-                data={data.pods}
-                columns={['Pod', 'Status']}
-                column_fields={['name', 'status']}
-                expanded_content={(data) => (
-                  <ExpandableTable
-                    table_variant="compact"
-                    keyPrefix="operator-containers"
-                    data={data.containers}
-                    columns={['Container', 'State', 'Image']}
-                    column_fields={['name', 'state', 'image']}
-                  />
-                )}
+                keyPrefix="operator-containers"
+                data={data.containers}
+                columns={['Container', 'State', 'Image']}
+                column_fields={['name', 'state', 'image']}
               />
             )}
           />

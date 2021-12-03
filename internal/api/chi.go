@@ -70,9 +70,8 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	}
 	list := make([]Chi, 0, len(chis.Items))
 	for _, chi := range chis.Items {
-		chClusters := make([]CHCluster, 0)
+		chClusterPods := make([]CHClusterPod, 0)
 		_ = chi.WalkClusters(func(cluster *chopv1.ChiCluster) error {
-			var chClusterPods []Pod
 			sel := &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"clickhouse.altinity.com/chi":     chi.Name,
@@ -82,12 +81,14 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 			}
 			pods, err := getK8sPodsFromLabelSelector(chi.Namespace, sel)
 			if err == nil {
-				chClusterPods = getPodsFromK8sPods(pods)
+				for _, pod := range getPodsFromK8sPods(pods) {
+					chClusterPod := CHClusterPod{
+						Pod:         pod,
+						ClusterName: cluster.Name,
+					}
+					chClusterPods = append(chClusterPods, chClusterPod)
+				}
 			}
-			chClusters = append(chClusters, CHCluster{
-				Name: cluster.Name,
-				Pods: chClusterPods,
-			})
 			return nil
 		})
 		var externalURL string
@@ -124,13 +125,13 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 			}
 		}
 		list = append(list, Chi{
-			Name:        chi.Name,
-			Namespace:   chi.Namespace,
-			Status:      chi.Status.Status,
-			Clusters:    chi.Status.ClustersCount,
-			Hosts:       chi.Status.HostsCount,
-			ExternalURL: externalURL,
-			CHClusters:  chClusters,
+			Name:          chi.Name,
+			Namespace:     chi.Namespace,
+			Status:        chi.Status.Status,
+			Clusters:      chi.Status.ClustersCount,
+			Hosts:         chi.Status.HostsCount,
+			ExternalURL:   externalURL,
+			CHClusterPods: chClusterPods,
 		})
 	}
 	_ = response.WriteEntity(list)

@@ -31,18 +31,18 @@ type OperatorPod struct {
 }
 
 type Chi struct {
-	Name        string      `json:"name" description:"name of the ClickHouse installation"`
-	Namespace   string      `json:"namespace" description:"namespace the installation is in"`
-	Status      string      `json:"status" description:"status of the installation"`
-	Clusters    int         `json:"clusters" description:"number of clusters in the installation"`
-	Hosts       int         `json:"hosts" description:"number of hosts in the installation"`
-	ExternalURL string      `json:"external_url" description:"external URL of the loadbalancer service"`
-	CHClusters  []CHCluster `json:"ch_clusters" description:"ClickHouse cluster details"`
+	Name          string         `json:"name" description:"name of the ClickHouse installation"`
+	Namespace     string         `json:"namespace" description:"namespace the installation is in"`
+	Status        string         `json:"status" description:"status of the installation"`
+	Clusters      int            `json:"clusters" description:"number of clusters in the installation"`
+	Hosts         int            `json:"hosts" description:"number of hosts in the installation"`
+	ExternalURL   string         `json:"external_url" description:"external URL of the loadbalancer service"`
+	CHClusterPods []CHClusterPod `json:"ch_cluster_pods" description:"ClickHouse cluster pods"`
 }
 
-type CHCluster struct {
-	Name string `json:"name" description:"name of the ClickHouse cluster"`
-	Pods []Pod  `json:"pods" description:"pods in the ClickHouse cluster"`
+type CHClusterPod struct {
+	Pod
+	ClusterName string `json:"cluster_name" description:"name of the ClickHouse cluster"`
 }
 
 type Dashboard struct {
