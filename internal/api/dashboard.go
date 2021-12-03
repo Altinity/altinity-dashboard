@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"github.com/altinity/altinity-dashboard/internal/k8s"
+	"github.com/altinity/altinity-dashboard/internal/utils"
 	chopv1 "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	"github.com/emicklei/go-restful/v3"
 	v1 "k8s.io/api/apps/v1"
@@ -12,8 +12,6 @@ import (
 
 // DashboardResource is the REST layer to the dashboard
 type DashboardResource struct {
-	version     string
-	chopRelease string
 }
 
 // Name returns the name of the web service
@@ -23,14 +21,6 @@ func (d *DashboardResource) Name() string {
 
 // WebService creates a new service that can handle REST requests
 func (d *DashboardResource) WebService(wsi *WebServiceInfo) (*restful.WebService, error) {
-	err := readFilesToStrings(wsi.Embed, []FileToString{
-		{"embed/version", &d.version},
-		{"embed/chop-release", &d.chopRelease},
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/dashboard").
@@ -45,12 +35,9 @@ func (d *DashboardResource) WebService(wsi *WebServiceInfo) (*restful.WebService
 }
 
 func (d *DashboardResource) getDashboard(request *restful.Request, response *restful.Response) {
-	dash := Dashboard{
-		Version:     d.version,
-		CHOPVersion: d.chopRelease,
-	}
+	dash := Dashboard{}
 
-	k := k8s.GetK8s()
+	k := utils.GetK8s()
 	dash.KubeCluster = k.Config.Host
 	sv, err := k.Clientset.ServerVersion()
 	if err == nil {
@@ -61,7 +48,7 @@ func (d *DashboardResource) getDashboard(request *restful.Request, response *res
 
 	// Get clickhouse-operator counts
 	var chops *v1.DeploymentList
-	chops, err = k8s.GetK8s().Clientset.AppsV1().Deployments("").List(
+	chops, err = utils.GetK8s().Clientset.AppsV1().Deployments("").List(
 		context.TODO(), metav1.ListOptions{
 			LabelSelector: "app=clickhouse-operator",
 		})
@@ -80,7 +67,7 @@ func (d *DashboardResource) getDashboard(request *restful.Request, response *res
 
 	// Get CHI counts
 	var chis *chopv1.ClickHouseInstallationList
-	chis, err = k8s.GetK8s().ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
+	chis, err = utils.GetK8s().ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
 		context.TODO(), metav1.ListOptions{})
 	if err == nil {
 		dash.ChiCount = len(chis.Items)

@@ -46,8 +46,6 @@ type CHClusterPod struct {
 }
 
 type Dashboard struct {
-	Version            string `json:"version" description:"altinity-dashboard version"`
-	CHOPVersion        string `json:"chop_version" description:"clickhouse-operator version"`
 	KubeCluster        string `json:"kube_cluster" description:"kubernetes cluster name"`
 	KubeVersion        string `json:"kube_version" description:"kubernetes cluster version"`
 	ChopCount          int    `json:"chop_count" description:"number of clickhouse-operators deployed"`

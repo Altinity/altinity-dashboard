@@ -12,7 +12,7 @@ import { SimpleModal } from '@app/Components/SimpleModal';
 import { useEffect, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
 import { AppRoutesProps } from '@app/routes';
-import { ToggleModal } from '@app/Components/ToggleModal';
+import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewOperatorModal } from '@app/Operators/NewOperatorModal';
 
@@ -40,7 +40,8 @@ interface Operator {
 export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [operators, setOperators] = useState(new Array<Operator>())
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<Operator|undefined>(undefined)
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
+  const [activeItem, setActiveItem] = useState<Operator|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const addAlert = props.addAlert
   const fetchData = () => {
@@ -64,14 +65,14 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const onDeleteClick = (item: Operator) => {
-    setItemToDelete(item)
+    setActiveItem(item)
     setIsDeleteModalOpen(true)
   }
   const onDeleteActionClick = () => {
-    if (itemToDelete === undefined) {
+    if (activeItem === undefined) {
       return
     }
-    fetchWithErrorHandling(`/api/v1/operators/${itemToDelete.namespace}`,
+    fetchWithErrorHandling(`/api/v1/operators/${activeItem.namespace}`,
       'DELETE',
       undefined,
       undefined,
@@ -83,10 +84,15 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
   }
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false)
-    setItemToDelete(undefined)
+    setActiveItem(undefined)
   }
   const onUpgradeClick = (item: Operator) => {
-    addAlert(`Upgrade of ${item.name} not implemented yet`, AlertVariant.warning)
+    setActiveItem(item)
+    setIsUpgradeModalOpen(true)
+  }
+  const closeUpgradeModal = () => {
+    setIsUpgradeModalOpen(false)
+    setActiveItem(undefined)
   }
   const retrieveErrorPane = retrieveError === undefined ? null : (
     <Alert variant="danger" title={retrieveError} isInline/>
@@ -102,8 +108,15 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
         onActionClick={onDeleteActionClick}
         onClose={closeDeleteModal}
       >
-        The operator will be removed from the <b>{itemToDelete ? itemToDelete.namespace : "UNKNOWN"}</b> namespace.
+        The operator will be removed from the <b>{activeItem ? activeItem.namespace : "UNKNOWN"}</b> namespace.
       </SimpleModal>
+      <NewOperatorModal
+       addAlert={props.addAlert}
+       closeModal={closeUpgradeModal}
+       isModalOpen={isUpgradeModalOpen}
+       isUpgrade={true}
+       namespace={activeItem?.namespace}
+      />
       <Split>
         <SplitItem isFilled>
           <Title headingLevel="h1" size="lg">
@@ -113,7 +126,14 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
         <SplitItem>
           <ToggleModal
             addAlert={addAlert}
-            modal={NewOperatorModal}
+            modal={(props: ToggleModalSubProps) => {
+              return NewOperatorModal({
+                addAlert: props.addAlert,
+                isModalOpen: props.isModalOpen,
+                closeModal: props.closeModal,
+                isUpgrade: false
+              })
+            }}
           />
         </SplitItem>
       </Split>

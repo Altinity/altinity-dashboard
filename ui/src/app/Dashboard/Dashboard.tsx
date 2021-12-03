@@ -15,8 +15,6 @@ import { useEffect, useState } from 'react';
 import { ChartDonutUtilization } from '@patternfly/react-charts';
 
 interface DashboardInfo {
-  version: string
-  chop_version: string
   kube_cluster: string
   kube_version: string
   chop_count: number
@@ -53,6 +51,8 @@ export const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
   const retrieveErrorPane = retrieveError === undefined ? null : (
     <Alert variant="danger" title={retrieveError} isInline/>
   )
+  const version = (document.querySelector('meta[name="version"]') as HTMLMetaElement)?.content || "unknown"
+  const chopRelease = (document.querySelector('meta[name="chop-release"]') as HTMLMetaElement)?.content || "unknown"
   return (
     <PageSection>
       {retrieveErrorPane}
@@ -69,8 +69,8 @@ export const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
                   <DescriptionListDescription>
                     {dashboardInfo ? (
                       <PageSection>
-                      <div>altinity-dashboard: {dashboardInfo.version}</div>
-                      <div>clickhouse-operator: {dashboardInfo.chop_version}</div>
+                      <div>altinity-dashboard: {version}</div>
+                      <div>clickhouse-operator: {chopRelease}</div>
                       </PageSection>
                     ) : "unknown"}
                   </DescriptionListDescription>

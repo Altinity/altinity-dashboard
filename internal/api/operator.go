@@ -3,12 +3,13 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/altinity/altinity-dashboard/internal/k8s"
+	"github.com/altinity/altinity-dashboard/internal/utils"
 	"github.com/emicklei/go-restful/v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"net/http"
 	"strings"
 	"time"
@@ -32,9 +33,9 @@ func (o *OperatorResource) Name() string {
 
 // WebService creates a new service that can handle REST requests
 func (o *OperatorResource) WebService(wsi *WebServiceInfo) (*restful.WebService, error) {
-	err := readFilesToStrings(wsi.Embed, []FileToString{
-		{"embed/chop-release", &o.chopRelease},
-		{"embed/clickhouse-operator-install-template.yaml", &o.opDeployTemplate},
+	o.chopRelease = wsi.ChopRelease
+	err := utils.ReadFilesToStrings(wsi.Embed, []utils.FileToString{
+		{Filename: "embed/clickhouse-operator-install-template.yaml", Dest: &o.opDeployTemplate},
 	})
 	if err != nil {
 		return nil, err
@@ -93,7 +94,7 @@ func (o *OperatorResource) getOperatorPodsFromDeployment(namespace string, deplo
 }
 
 func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
-	deployments, err := k8s.GetK8s().Clientset.AppsV1().Deployments(namespace).List(
+	deployments, err := utils.GetK8s().Clientset.AppsV1().Deployments(namespace).List(
 		context.TODO(), metav1.ListOptions{
 			LabelSelector: "app=clickhouse-operator",
 		})
@@ -168,27 +169,44 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 		"METRICS_EXPORTER_NAMESPACE": namespace,
 	})
 
-	k := k8s.GetK8s()
-	var err error
+	// Get existing operators
+	k := utils.GetK8s()
+	var ops []Operator
+	ops, err := o.getOperators("")
+	if err != nil {
+		return err
+	}
+
 	if doDelete {
-		// Check if this is the last operator
-		var ops []Operator
-		ops, err = o.getOperators("")
-		if err != nil {
-			return err
-		}
 		if len(ops) == 1 && ops[0].Namespace == namespace {
 			// Delete cluster-wide resources if we're deleting the last operator
 			namespace = ""
 		}
 		err = k.DoDelete(deploy, namespace)
+		if err != nil {
+			return err
+		}
 	} else {
-		err = k.DoApply(deploy, namespace, true)
+		isUpgrade := false
+		for _, op := range ops {
+			if op.Namespace == namespace {
+				isUpgrade = true
+			}
+		}
+		if isUpgrade {
+			err = k.DoApplySelectively(deploy, namespace, func(gvk *schema.GroupVersionKind) bool {
+				return gvk.Kind == "Deployment"
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			err = k.DoApply(deploy, namespace)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 

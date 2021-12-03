@@ -1,14 +1,28 @@
 import * as React from 'react';
 import { ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { useState } from 'react';
-import { AlertVariant, Button, Grid, GridItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
+import { AlertVariant, Bullseye, Button, Grid, GridItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
 import { NamespaceSelector } from '@app/Namespaces/NamespaceSelector';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 
-export const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (props: ToggleModalSubProps) => {
+export interface NewOperatorModalProps extends ToggleModalSubProps {
+  isUpgrade: boolean
+  namespace?: string
+}
+
+export const NewOperatorModal: React.FunctionComponent<NewOperatorModalProps> = (props) => {
   const {addAlert, isModalOpen} = props
   const [selectedVersion, setSelectedVersion] = useState("")
-  const [selectedNamespace, setSelectedNamespace] = useState("")
+  let selectedNamespace: string
+  let setSelectedNamespace: (string) => void
+  const [selectedNamespaceState, setSelectedNamespaceState] = useState("")
+  if (props.namespace) {
+    selectedNamespace = props.namespace
+    setSelectedNamespace = () => {return}
+  } else {
+    selectedNamespace = selectedNamespaceState
+    setSelectedNamespace = setSelectedNamespaceState
+  }
   const closeModal = (): void => {
     setSelectedVersion("")
     setSelectedNamespace("")
@@ -28,9 +42,10 @@ export const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (p
       }
     )
   }
+  const latestChop = (document.querySelector('meta[name="chop-release"]') as HTMLMetaElement)?.content || "latest"
   return (
     <Modal
-      title="Deploy ClickHouse Operator"
+      title={(props.isUpgrade ? "Upgrade" : "Deploy") + " ClickHouse Operator"}
       variant={ModalVariant.small}
       isOpen={isModalOpen}
       onClose={closeModal}
@@ -38,7 +53,7 @@ export const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (p
       actions={[
         <Button key="deploy" variant="primary"
                 onClick={onDeployClick} isDisabled={selectedNamespace === ""}>
-          Deploy
+          {props.isUpgrade ? "Upgrade" : "Deploy"}
         </Button>,
         <Button key="cancel" variant="link" onClick={closeModal}>
           Cancel
@@ -48,7 +63,7 @@ export const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (p
       <Grid hasGutter={true}>
         <GridItem span={7}>
           <div>
-            Version (leave blank for latest):
+            Version (leave blank for {latestChop}):
           </div>
           <TextInput
             value={selectedVersion}
@@ -57,11 +72,19 @@ export const NewOperatorModal: React.FunctionComponent<ToggleModalSubProps> = (p
           />
         </GridItem>
         <GridItem span={5} rowSpan={2}>
+          <Bullseye>
+            <span>See <a target="_blank" rel="noreferrer" href="https://github.com/Altinity/clickhouse-operator/releases">Release Notes</a> for information about available versions.</span>
+          </Bullseye>
         </GridItem>
-        <GridItem span={7}>
-          Select a Namespace:
-          <NamespaceSelector onSelect={setSelectedNamespace}/>
-        </GridItem>
+        {
+          props.isUpgrade ? null :
+            (
+              <GridItem span={7}>
+                Select a Namespace:
+                <NamespaceSelector onSelect={setSelectedNamespace}/>
+              </GridItem>
+            )
+        }
       </Grid>
     </Modal>
   )

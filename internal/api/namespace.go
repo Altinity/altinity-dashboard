@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"github.com/altinity/altinity-dashboard/internal/k8s"
+	"github.com/altinity/altinity-dashboard/internal/utils"
 	"github.com/emicklei/go-restful/v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +39,7 @@ func (n *NamespaceResource) WebService(wsi *WebServiceInfo) (*restful.WebService
 }
 
 func (n *NamespaceResource) getNamespaces(request *restful.Request, response *restful.Response) {
-	namespaces, err := k8s.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	namespaces, err := utils.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		webError(response, http.StatusInternalServerError, "listing namespaces", err)
 		return
@@ -62,8 +62,8 @@ func (n *NamespaceResource) createNamespace(request *restful.Request, response *
 	}
 
 	// Check if the namespace already exists
-	k := k8s.GetK8s().Clientset
-	namespaces, err := k8s.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
+	k := utils.GetK8s().Clientset
+	namespaces, err := utils.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
 		FieldSelector: "metadata.name=" + namespace.Name,
 		Limit:         1,
 	})

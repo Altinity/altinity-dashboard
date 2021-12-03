@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/altinity/altinity-dashboard/internal/k8s"
+	"github.com/altinity/altinity-dashboard/internal/utils"
 	chopv1 "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	"github.com/emicklei/go-restful/v3"
 	v1 "k8s.io/api/core/v1"
@@ -61,7 +61,7 @@ func (c *ChiResource) WebService(wsi *WebServiceInfo) (*restful.WebService, erro
 }
 
 func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
-	k := k8s.GetK8s()
+	k := utils.GetK8s()
 	chis, err := k.ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
 		context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -144,7 +144,7 @@ func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.R
 		webError(response, http.StatusBadRequest, "reading request body", err)
 		return
 	}
-	err = k8s.GetK8s().DoApply(putParams.YAML, putParams.Namespace, true)
+	err = utils.GetK8s().DoApply(putParams.YAML, putParams.Namespace)
 	if err != nil {
 		webError(response, http.StatusInternalServerError, "applying CHI", err)
 		return
@@ -172,7 +172,7 @@ func (c *ChiResource) handleDeleteCHI(request *restful.Request, response *restfu
 		return
 	}
 
-	err = k8s.GetK8s().ChopClientset.ClickhouseV1().
+	err = utils.GetK8s().ChopClientset.ClickhouseV1().
 		ClickHouseInstallations(deleteParams.Namespace).
 		Delete(context.TODO(), deleteParams.ChiName, metav1.DeleteOptions{})
 	if err != nil {

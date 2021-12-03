@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"embed"
@@ -13,7 +12,7 @@ import (
 	_ "github.com/altinity/altinity-dashboard/internal/api"
 	"github.com/altinity/altinity-dashboard/internal/auth"
 	"github.com/altinity/altinity-dashboard/internal/certs"
-	"github.com/altinity/altinity-dashboard/internal/k8s"
+	"github.com/altinity/altinity-dashboard/internal/utils"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
@@ -77,21 +76,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Read version info from embed files
+	var appVersion string
+	var chopRelease string
+	err = utils.ReadFilesToStrings(&embedFiles, []utils.FileToString{
+		{Filename: "embed/version", Dest: &appVersion},
+		{Filename: "embed/chop-release", Dest: &chopRelease},
+	})
+	if err != nil {
+		fmt.Printf("Error reading version information")
+		os.Exit(1)
+	}
+
 	// If version was requested, print it and exit
 	if *version {
-		var verInfo []byte
-		var chopRelease []byte
-		verInfo, err = embedFiles.ReadFile("embed/version")
-		if err == nil {
-			chopRelease, err = embedFiles.ReadFile("embed/chop-release")
-		}
-		if err != nil {
-			fmt.Printf("Error reading version information")
-			os.Exit(1)
-		}
-		verInfo = bytes.TrimSpace(verInfo)
-		chopRelease = bytes.TrimSpace(chopRelease)
-		fmt.Printf("Altinity Dashboard version %s\n", verInfo)
+		fmt.Printf("Altinity Dashboard version %s\n", appVersion)
 		fmt.Printf("   built using clickhouse-operator version %s\n", chopRelease)
 		os.Exit(0)
 	}
@@ -112,7 +111,7 @@ func main() {
 	}
 
 	// Connect to Kubernetes
-	err = k8s.InitK8s(*kubeconfig)
+	err = utils.InitK8s(*kubeconfig)
 	if err != nil {
 		fmt.Printf("Could not connect to Kubernetes: %s\n", err)
 		os.Exit(1)
@@ -146,9 +145,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	indexHTML = regexp.MustCompile(`meta name="devmode" content="(\w*)"`).
-		ReplaceAll(indexHTML, []byte(`meta name="devmode" content="`+
-			strconv.FormatBool(*devMode)+`"`))
+	for name, content := range map[string]string{
+		"devmode":      strconv.FormatBool(*devMode),
+		"version":      appVersion,
+		"chop-release": chopRelease,
+	} {
+		re := regexp.MustCompile(fmt.Sprintf(`meta name="%s" content="(\w*)"`, name))
+		indexHTML = re.ReplaceAll(indexHTML,
+			[]byte(fmt.Sprintf(`meta name="%s" content="%s"`, name, content)))
+	}
 
 	// Create HTTP router object
 	httpMux := http.NewServeMux()
@@ -157,7 +162,9 @@ func main() {
 	rc := restful.NewContainer()
 	rc.ServeMux = httpMux
 	wsi := api.WebServiceInfo{
-		Embed: &embedFiles,
+		Version:     appVersion,
+		ChopRelease: chopRelease,
+		Embed:       &embedFiles,
 	}
 	for _, resource := range []api.WebService{
 		&api.DashboardResource{},

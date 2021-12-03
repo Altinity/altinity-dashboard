@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"github.com/altinity/altinity-dashboard/internal/k8s"
+	"github.com/altinity/altinity-dashboard/internal/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -35,7 +35,7 @@ func getK8sPodsFromLabelSelector(namespace string, selector *metav1.LabelSelecto
 	if err != nil {
 		return nil, err
 	}
-	pods, err := k8s.GetK8s().Clientset.CoreV1().Pods(namespace).List(context.TODO(),
+	pods, err := utils.GetK8s().Clientset.CoreV1().Pods(namespace).List(context.TODO(),
 		metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(ls).String(),
 		},
@@ -51,7 +51,7 @@ func getK8sServicesFromLabelSelector(namespace string, selector *metav1.LabelSel
 	if err != nil {
 		return nil, err
 	}
-	services, err := k8s.GetK8s().Clientset.CoreV1().Services(namespace).List(context.TODO(),
+	services, err := utils.GetK8s().Clientset.CoreV1().Services(namespace).List(context.TODO(),
 		metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(ls).String(),
 		},

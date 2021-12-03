@@ -1,12 +1,10 @@
-package k8s
+package utils
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	chopclientset "github.com/altinity/clickhouse-operator/pkg/client/clientset/versioned"
-	"io"
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
-	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
@@ -24,7 +21,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"path/filepath"
-	"strings"
 )
 
 type Info struct {
@@ -133,19 +129,12 @@ func (i *Info) doGetVerUpdate(dr dynamic.ResourceInterface, obj *unstructured.Un
 
 // doApplyOrDelete does an apply or delete of a given YAML string
 // Adapted from https://ymmt2005.hatenablog.com/entry/2020/04/14/An_example_of_using_dynamic_client_of_k8s.io/client-go
-func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, useSSA bool) error {
-	multiDocReader := utilyaml.NewYAMLReader(bufio.NewReader(strings.NewReader(yaml)))
-	yamlDocs := make([][]byte, 0)
-	for {
-		yd, err := multiDocReader.Read()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			} else {
-				return err
-			}
-		}
-		yamlDocs = append(yamlDocs, yd)
+func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, useSSA bool,
+	selector func(gvk *schema.GroupVersionKind) bool) error {
+	// Split YAML into individual docs
+	yamlDocs, err := SplitYAMLDocs(yaml)
+	if err != nil {
+		return err
 	}
 
 	// Prepare a RESTMapper to find GVR
@@ -166,9 +155,16 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, use
 		// Decode YAML manifest into unstructured.Unstructured
 		obj := &unstructured.Unstructured{}
 		var gvk *schema.GroupVersionKind
-		_, gvk, err = decUnstructured.Decode(yd, nil, obj)
+		_, gvk, err = decUnstructured.Decode([]byte(yd), nil, obj)
 		if err != nil {
 			return err
+		}
+
+		// Call selector to determine if this document should be processed
+		if selector != nil {
+			if !selector(gvk) {
+				continue
+			}
 		}
 
 		// Find GVR
@@ -209,6 +205,13 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, use
 		switch {
 		case doDelete:
 			err = dr.Delete(context.TODO(), obj.GetName(), metav1.DeleteOptions{})
+			var se *errors2.StatusError
+			if errors.As(err, &se) {
+				if se.Status().Reason == metav1.StatusReasonNotFound {
+					// If we're trying to delete, "not found" is fine
+					err = nil
+				}
+			}
 		case !doDelete && useSSA:
 			err = i.doApplyWithSSA(dr, obj)
 		case !doDelete && !useSSA:
@@ -222,11 +225,16 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, use
 }
 
 // DoApply does a server-side apply of a given YAML string
-func (i *Info) DoApply(yaml string, namespace string, useSSA bool) error {
-	return i.doApplyOrDelete(yaml, namespace, false, useSSA)
+func (i *Info) DoApply(yaml string, namespace string) error {
+	return i.doApplyOrDelete(yaml, namespace, false, true, nil)
+}
+
+// DoApplySelectively does a selective server-side apply of some docs from a given YAML string
+func (i *Info) DoApplySelectively(yaml string, namespace string, selector func(*schema.GroupVersionKind) bool) error {
+	return i.doApplyOrDelete(yaml, namespace, false, true, selector)
 }
 
 // DoDelete deletes the resources identified in a given YAML string
 func (i *Info) DoDelete(yaml string, namespace string) error {
-	return i.doApplyOrDelete(yaml, namespace, true, false)
+	return i.doApplyOrDelete(yaml, namespace, true, false, nil)
 }
