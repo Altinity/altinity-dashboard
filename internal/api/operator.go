@@ -9,7 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"net/http"
 	"strings"
 	"time"
@@ -194,9 +194,16 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 			}
 		}
 		if isUpgrade {
-			err = k.DoApplySelectively(deploy, namespace, func(gvk *schema.GroupVersionKind) bool {
-				return gvk.Kind == "Deployment"
-			})
+			err = k.DoApplySelectively(deploy, namespace,
+				func(candidates []*unstructured.Unstructured) []*unstructured.Unstructured {
+					selected := make([]*unstructured.Unstructured, 0)
+					for _, c := range candidates {
+						if c.GetKind() == "Deployment" {
+							selected = append(selected, c)
+						}
+					}
+					return selected
+				})
 			if err != nil {
 				return err
 			}

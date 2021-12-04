@@ -74,11 +74,8 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
     if (itemToDelete === undefined) {
       return
     }
-    fetchWithErrorHandling(`/api/v1/chis`, 'DELETE',
-      {
-        namespace: itemToDelete.namespace,
-        chi_name: itemToDelete.name,
-      },
+    fetchWithErrorHandling(`/api/v1/chis/${itemToDelete.namespace}/${itemToDelete.name}`, 'DELETE',
+      undefined,
       undefined,
       (response, text, error) => {
         const errorMessage = (error == "") ? text : `${error}: ${text}`

@@ -37,9 +37,8 @@ export const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props:
     setYaml(editor.getValue())
   }
   const onDeployClick = (): void => {
-    fetchWithErrorHandling(`/api/v1/chis`, 'PUT',
+    fetchWithErrorHandling(`/api/v1/chis/${selectedNamespace}`, 'PUT',
       {
-        namespace: selectedNamespace,
         yaml: yaml
       },
       () => {

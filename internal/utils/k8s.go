@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -28,6 +27,8 @@ type Info struct {
 	Clientset     *kubernetes.Clientset
 	ChopClientset *chopclientset.Clientset
 }
+
+type SelectorFunc func([]*unstructured.Unstructured) []*unstructured.Unstructured
 
 var globalK8s *Info
 
@@ -129,8 +130,7 @@ func (i *Info) doGetVerUpdate(dr dynamic.ResourceInterface, obj *unstructured.Un
 
 // doApplyOrDelete does an apply or delete of a given YAML string
 // Adapted from https://ymmt2005.hatenablog.com/entry/2020/04/14/An_example_of_using_dynamic_client_of_k8s.io/client-go
-func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, useSSA bool,
-	selector func(gvk *schema.GroupVersionKind) bool) error {
+func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, useSSA bool, selector SelectorFunc) error {
 	// Split YAML into individual docs
 	yamlDocs, err := SplitYAMLDocs(yaml)
 	if err != nil {
@@ -151,23 +151,26 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, use
 		return err
 	}
 
+	yamlCandidates := make([]*unstructured.Unstructured, 0, len(yamlDocs))
+
 	for _, yd := range yamlDocs {
 		// Decode YAML manifest into unstructured.Unstructured
 		obj := &unstructured.Unstructured{}
-		var gvk *schema.GroupVersionKind
-		_, gvk, err = decUnstructured.Decode([]byte(yd), nil, obj)
+		_, _, err = decUnstructured.Decode([]byte(yd), nil, obj)
 		if err != nil {
 			return err
 		}
+		yamlCandidates = append(yamlCandidates, obj)
+	}
 
-		// Call selector to determine if this document should be processed
-		if selector != nil {
-			if !selector(gvk) {
-				continue
-			}
-		}
+	// Call selector to determine which docs should be processed
+	if selector != nil {
+		yamlCandidates = selector(yamlCandidates)
+	}
 
+	for _, obj := range yamlCandidates {
 		// Find GVR
+		gvk := obj.GroupVersionKind()
 		var mapping *meta.RESTMapping
 		mapping, err = mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
@@ -230,7 +233,7 @@ func (i *Info) DoApply(yaml string, namespace string) error {
 }
 
 // DoApplySelectively does a selective server-side apply of some docs from a given YAML string
-func (i *Info) DoApplySelectively(yaml string, namespace string, selector func(*schema.GroupVersionKind) bool) error {
+func (i *Info) DoApplySelectively(yaml string, namespace string, selector SelectorFunc) error {
 	return i.doApplyOrDelete(yaml, namespace, false, true, selector)
 }
 

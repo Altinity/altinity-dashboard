@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/utils"
 	chopv1 "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	"github.com/emicklei/go-restful/v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"net/http"
 )
 
@@ -17,14 +19,7 @@ type ChiResource struct {
 
 // ChiPutParams is the object for parameters to a CHI PUT request
 type ChiPutParams struct {
-	Namespace string `json:"namespace" description:"namespace to deploy the CHI to"`
 	YAML      string `json:"yaml" description:"YAML of the CHI custom resource"`
-}
-
-// ChiDeleteParams is the object for parameters to a CHI DELETE request
-type ChiDeleteParams struct {
-	Namespace string `json:"namespace" description:"namespace to delete the CHI from"`
-	ChiName   string `json:"chi_name" description:"name op the CHI to delete"`
 }
 
 // Name returns the name of the web service
@@ -40,29 +35,37 @@ func (c *ChiResource) WebService(wsi *WebServiceInfo) (*restful.WebService, erro
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	// This is not very RESTful - the PUT and DELETE ought to take path parameters.
-
 	ws.Route(ws.GET("").To(c.getCHIs).
 		Doc("get all ClickHouse Installations").
 		Writes([]Chi{}).
 		Returns(200, "OK", []Chi{}))
 
-	ws.Route(ws.PUT("").To(c.handlePutCHI).
+	ws.Route(ws.GET("/{namespace}").To(c.getCHIs).
+		Doc("get all ClickHouse Installations in a namespace").
+		Param(ws.PathParameter("namespace", "namespace to get from").DataType("string")).
+		Writes([]Chi{}).
+		Returns(200, "OK", []Chi{}))
+
+	ws.Route(ws.PUT("/{namespace}").To(c.handlePutCHI).
 		Doc("deploy a ClickHouse Installation from YAML").
+		Param(ws.PathParameter("namespace", "namespace to deploy to").DataType("string")).
 		Reads(ChiPutParams{}).
 		Returns(200, "OK", nil))
 
-	ws.Route(ws.DELETE("").To(c.handleDeleteCHI).
+	ws.Route(ws.DELETE("/{namespace}/{name}").To(c.handleDeleteCHI).
 		Doc("delete a ClickHouse installation").
-		Reads(ChiDeleteParams{}).
+		Param(ws.PathParameter("namespace", "namespace to delete from").DataType("string")).
+		Param(ws.PathParameter("name", "name of the CHI to delete").DataType("string")).
 		Returns(200, "OK", nil))
 
 	return ws, nil
 }
 
 func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
+	namespace, _ := request.PathParameters()["namespace"]
+
 	k := utils.GetK8s()
-	chis, err := k.ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
+	chis, err := k.ChopClientset.ClickhouseV1().ClickHouseInstallations(namespace).List(
 		context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		webError(response, http.StatusBadRequest, "listing CHIs", err)
@@ -93,7 +96,7 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 		})
 		var externalURL string
 		var services *v1.ServiceList
-		services, err = getK8sServicesFromLabelSelector("", &metav1.LabelSelector{
+		services, err = getK8sServicesFromLabelSelector(namespace, &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"clickhouse.altinity.com/chi": chi.Name,
 			},
@@ -137,14 +140,40 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	_ = response.WriteEntity(list)
 }
 
+var ErrNamespaceRequired = errors.New("namespace is required")
+var ErrNameAndNamespaceRequired = errors.New("name and namespace are required")
+var YAMLMustBeCHI = errors.New("YAML document must contain a single ClickhouseInstallation definition")
+
 func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.Response) {
+	namespace, ok := request.PathParameters()["namespace"]
+	if !ok || namespace == "" {
+		webError(response, http.StatusBadRequest, "processing request", ErrNamespaceRequired)
+		return
+	}
+
 	putParams := ChiPutParams{}
 	err := request.ReadEntity(&putParams)
 	if err != nil {
 		webError(response, http.StatusBadRequest, "reading request body", err)
 		return
 	}
-	err = utils.GetK8s().DoApply(putParams.YAML, putParams.Namespace)
+	var rejected = false
+	err = utils.GetK8s().DoApplySelectively(putParams.YAML, namespace,
+		func(candidates []*unstructured.Unstructured) []*unstructured.Unstructured {
+			if len(candidates) != 1 {
+				rejected = true
+				return nil
+			}
+			if candidates[0].GetKind() != "ClickHouseInstallation" {
+				rejected = true
+				return nil
+			}
+			return candidates
+		})
+	if rejected {
+		webError(response, http.StatusBadRequest, "processing request", YAMLMustBeCHI)
+		return
+	}
 	if err != nil {
 		webError(response, http.StatusInternalServerError, "applying CHI", err)
 		return
@@ -153,28 +182,16 @@ func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.R
 }
 
 func (c *ChiResource) handleDeleteCHI(request *restful.Request, response *restful.Response) {
-	deleteParams := ChiDeleteParams{}
-	err := request.ReadEntity(&deleteParams)
-	if err != nil {
-		webError(response, http.StatusBadRequest, "reading request body", err)
+	namespace, ok1 := request.PathParameters()["namespace"]
+	name, ok2 := request.PathParameters()["name"]
+	if !ok1 || !ok2 || name == "" || namespace == "" {
+		webError(response, http.StatusBadRequest, "processing request", ErrNameAndNamespaceRequired)
 		return
 	}
 
-	if deleteParams.ChiName == "" {
-		webError(response, http.StatusBadRequest, "processing request",
-			restful.ServiceError{Message: "chi_name is required"})
-		return
-	}
-
-	if deleteParams.Namespace == "" {
-		webError(response, http.StatusBadRequest, "processing request",
-			restful.ServiceError{Message: "namespace is required"})
-		return
-	}
-
-	err = utils.GetK8s().ChopClientset.ClickhouseV1().
-		ClickHouseInstallations(deleteParams.Namespace).
-		Delete(context.TODO(), deleteParams.ChiName, metav1.DeleteOptions{})
+	err := utils.GetK8s().ChopClientset.ClickhouseV1().
+		ClickHouseInstallations(namespace).
+		Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err != nil {
 		webError(response, http.StatusInternalServerError, "deleting CHI", err)
 		return
