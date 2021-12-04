@@ -1,0 +1,39 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: altinity-dashboard
+  labels:
+    app: altinity-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: altinity-dashboard
+  template:
+    metadata:
+      labels:
+        app: altinity-dashboard
+    spec:
+      containers:
+        - name: altinity-dashboard
+          image: ghcr.io/altinity/altinity-dashboard:main
+          imagePullPolicy: Always
+          args: ["adash", "--notoken", "--debug", "--bindhost", "0.0.0.0"]
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: altinity-dashboard
+  labels:
+    app: altinity-dashboard
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      name: altinity-dashboard
+      protocol: TCP
+  selector:
+    app: altinity-dashboard
