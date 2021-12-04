@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button } from '@patternfly/react-core';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 import { AppRoutesProps } from '@app/routes';
 import { useState } from 'react';
 
@@ -7,6 +7,9 @@ import { useState } from 'react';
 export interface ToggleModalProps extends AppRoutesProps {
   modal: React.FunctionComponent<ToggleModalSubProps>
   onToggle?: (open: boolean) => void
+  buttonText?: string
+  buttonVariant?: ButtonVariant
+  buttonInline?: boolean
 }
 
 // ToggleModalSubProps are the properties of the Modal within the ToggleModal component
@@ -25,8 +28,11 @@ export const ToggleModal: React.FunctionComponent<ToggleModalProps> = (props: To
   }
   return (
     <React.Fragment>
-      <Button variant="primary" onClick={() => handleStateChange(!isModalOpen)}>
-        +
+      <Button
+        variant={props.buttonVariant ? props.buttonVariant : "primary"}
+        isInline={props.buttonInline}
+        onClick={() => handleStateChange(!isModalOpen)}>
+        {props.buttonText ? props.buttonText : "+"}
       </Button>
       {props.modal({
         addAlert: props.addAlert,

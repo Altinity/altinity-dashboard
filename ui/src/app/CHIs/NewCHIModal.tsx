@@ -3,9 +3,9 @@ import { ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { useEffect, useState } from 'react';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import {
-  AlertVariant,
+  AlertVariant, Bullseye,
   Button,
-  EmptyState, EmptyStateBody, EmptyStateIcon, EmptyStateSecondaryActions,
+  EmptyState, EmptyStateBody, EmptyStateIcon, EmptyStateSecondaryActions, Grid, GridItem,
   Modal, ModalVariant, Title
 } from '@patternfly/react-core';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
@@ -14,6 +14,7 @@ import { editor } from 'monaco-editor';
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import CodeIcon from '@patternfly/react-icons/dist/esm/icons/code-icon';
 import { ListSelector } from '@app/Components/ListSelector';
+import { StringHasher } from '@app/Components/StringHasher';
 
 export const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props: ToggleModalSubProps) => {
   const { addAlert, isModalOpen } = props
@@ -126,12 +127,25 @@ export const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props:
             </EmptyState>
           )}
         />
-        <div>
-          <div>
-            Select a Namespace To Deploy To:
-          </div>
-          <NamespaceSelector onSelect={setSelectedNamespace}/>
-        </div>
+        <Grid hasGutter>
+          <GridItem span={12}>
+            <Bullseye>
+              <div>The settings available here are explained in the <a target="_blank" rel="noreferrer" href="https://github.com/Altinity/clickhouse-operator/blob/master/docs/custom_resource_explained.md">ClickHouse Custom Resource Documentation</a>.</div>
+            </Bullseye>
+          </GridItem>
+          <GridItem span={8}>
+            <div>
+              Select a Namespace To Deploy To:
+            </div>
+            <NamespaceSelector onSelect={setSelectedNamespace}/>
+          </GridItem>
+          <GridItem span={4}>
+            Use the <StringHasher
+              title="Password Hash Calculator"
+              valueName="password"
+            /> to generate values for the <i>user/password_sha256_hex</i> field.
+          </GridItem>
+        </Grid>
       </React.Fragment>
     </Modal>
   )
