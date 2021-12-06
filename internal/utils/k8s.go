@@ -23,9 +23,12 @@ import (
 )
 
 type Info struct {
-	Config        *rest.Config
-	Clientset     *kubernetes.Clientset
-	ChopClientset *chopclientset.Clientset
+	Config          *rest.Config
+	Clientset       *kubernetes.Clientset
+	ChopClientset   *chopclientset.Clientset
+	DiscoveryClient *discovery.DiscoveryClient
+	RESTMapper      *restmapper.DeferredDiscoveryRESTMapper
+	DynamicClient   dynamic.Interface
 }
 
 type SelectorFunc func([]*unstructured.Unstructured) []*unstructured.Unstructured
@@ -62,10 +65,25 @@ func InitK8s(kubeconfig string) error {
 		return err
 	}
 
+	dc, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return err
+	}
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
+
+	var dyn dynamic.Interface
+	dyn, err = dynamic.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
 	globalK8s = &Info{
-		Config:        config,
-		Clientset:     clientset,
-		ChopClientset: chopClientset,
+		Config:          config,
+		Clientset:       clientset,
+		ChopClientset:   chopClientset,
+		DiscoveryClient: dc,
+		RESTMapper:      mapper,
+		DynamicClient:   dyn,
 	}
 
 	return nil
@@ -80,6 +98,16 @@ func GetK8s() *Info {
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
+func (i *Info) DecodeYAMLToObject(yaml string) (*unstructured.Unstructured, error) {
+	obj := &unstructured.Unstructured{}
+	_, _, err := decUnstructured.Decode([]byte(yaml), nil, obj)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+var fieldManagerName = "altinity-dashboard"
 var errNoNamespace = errors.New("could not determine namespace for namespace-scoped entity")
 var errNamespaceConflict = errors.New("provided namespace conflicts with YAML object")
 
@@ -94,7 +122,7 @@ func (i *Info) doApplyWithSSA(dr dynamic.ResourceInterface, obj *unstructured.Un
 	// Create or Update the object with SSA
 	force := true
 	_, err = dr.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
-		FieldManager: "altinity-dashboard",
+		FieldManager: fieldManagerName,
 		Force:        &force,
 	})
 	if err != nil {
@@ -118,14 +146,56 @@ func (i *Info) doGetVerUpdate(dr dynamic.ResourceInterface, obj *unstructured.Un
 	if err == nil {
 		// If the old object existed, copy its version number to the new object
 		obj.SetResourceVersion(curObj.GetResourceVersion())
-		_, err = dr.Update(context.TODO(), obj, metav1.UpdateOptions{})
+		_, err = dr.Update(context.TODO(), obj, metav1.UpdateOptions{
+			FieldManager: fieldManagerName,
+		})
+		if err != nil {
+			return err
+		}
 	} else {
-		_, err = dr.Create(context.TODO(), obj, metav1.CreateOptions{})
+		_, err = dr.Create(context.TODO(), obj, metav1.CreateOptions{
+			FieldManager: fieldManagerName,
+		})
 	}
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// getDynamicREST gets a dynamic REST interface for a given unstructured object
+func (i *Info) getDynamicRest(obj *unstructured.Unstructured, namespace string) (dynamic.ResourceInterface, string, error) {
+	k := GetK8s()
+	gvk := obj.GroupVersionKind()
+	var mapping *meta.RESTMapping
+	mapping, err := k.RESTMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Obtain REST interface for the GVR
+	var dr dynamic.ResourceInterface
+	var finalNamespace string
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		// namespaced resources should specify the namespace
+		objNamespace := obj.GetNamespace()
+		switch {
+		case namespace == "" && objNamespace == "":
+			return nil, "", errNoNamespace
+		case namespace == "":
+			finalNamespace = objNamespace
+		case objNamespace == "":
+			finalNamespace = namespace
+		case namespace != objNamespace:
+			return nil, "", errNamespaceConflict
+		default:
+			finalNamespace = namespace
+		}
+		dr = k.DynamicClient.Resource(mapping.Resource).Namespace(finalNamespace)
+	} else {
+		dr = k.DynamicClient.Resource(mapping.Resource)
+	}
+	return dr, finalNamespace, nil
 }
 
 // doApplyOrDelete does an apply or delete of a given YAML string
@@ -137,72 +207,29 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, use
 		return err
 	}
 
-	// Prepare a RESTMapper to find GVR
-	dc, err := discovery.NewDiscoveryClientForConfig(i.Config)
-	if err != nil {
-		return err
-	}
-	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
-
-	// Prepare the dynamic client
-	var dyn dynamic.Interface
-	dyn, err = dynamic.NewForConfig(i.Config)
-	if err != nil {
-		return err
-	}
-
-	yamlCandidates := make([]*unstructured.Unstructured, 0, len(yamlDocs))
-
+	// Parse YAML documents into objects
+	candidates := make([]*unstructured.Unstructured, 0, len(yamlDocs))
 	for _, yd := range yamlDocs {
-		// Decode YAML manifest into unstructured.Unstructured
-		obj := &unstructured.Unstructured{}
-		_, _, err = decUnstructured.Decode([]byte(yd), nil, obj)
+		var obj *unstructured.Unstructured
+		obj, err = i.DecodeYAMLToObject(yd)
 		if err != nil {
 			return err
 		}
-		yamlCandidates = append(yamlCandidates, obj)
+		candidates = append(candidates, obj)
 	}
 
-	// Call selector to determine which docs should be processed
+	// Call selector to determine which objects should be processed
 	if selector != nil {
-		yamlCandidates = selector(yamlCandidates)
+		candidates = selector(candidates)
 	}
 
-	for _, obj := range yamlCandidates {
-		// Find GVR
-		gvk := obj.GroupVersionKind()
-		var mapping *meta.RESTMapping
-		mapping, err = mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
-		if err != nil {
-			return err
-		}
-
-		// Obtain REST interface for the GVR
+	for _, obj := range candidates {
 		var dr dynamic.ResourceInterface
-		if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
-			// namespaced resources should specify the namespace
-			var finalNamespace string
-			objNamespace := obj.GetNamespace()
-			switch {
-			case namespace == "" && objNamespace == "":
-				return errNoNamespace
-			case namespace == "":
-				finalNamespace = objNamespace
-			case objNamespace == "":
-				finalNamespace = namespace
-			case namespace != objNamespace:
-				return errNamespaceConflict
-			default:
-				finalNamespace = namespace
-			}
-			dr = dyn.Resource(mapping.Resource).Namespace(finalNamespace)
-		} else {
-			// for cluster-wide resources
-			if doDelete && namespace != "" {
-				// don't delete cluster-wide resources if delete is namespace scoped
-				continue
-			}
-			dr = dyn.Resource(mapping.Resource)
+		var finalNamespace string
+		dr, finalNamespace, err = i.getDynamicRest(obj, namespace)
+		if doDelete && namespace != "" && finalNamespace == "" {
+			// don't delete cluster-wide resources if delete is namespace scoped
+			continue
 		}
 
 		switch {
@@ -227,17 +254,48 @@ func (i *Info) doApplyOrDelete(yaml string, namespace string, doDelete bool, use
 	return nil
 }
 
-// DoApply does a server-side apply of a given YAML string
-func (i *Info) DoApply(yaml string, namespace string) error {
+// MultiYamlApply does a server-side apply of a given YAML string, which may contain multiple documents
+func (i *Info) MultiYamlApply(yaml string, namespace string) error {
 	return i.doApplyOrDelete(yaml, namespace, false, true, nil)
 }
 
-// DoApplySelectively does a selective server-side apply of some docs from a given YAML string
-func (i *Info) DoApplySelectively(yaml string, namespace string, selector SelectorFunc) error {
+// MultiYamlApplySelectively does a selective server-side apply of multiple docs from a given YAML string
+func (i *Info) MultiYamlApplySelectively(yaml string, namespace string, selector SelectorFunc) error {
 	return i.doApplyOrDelete(yaml, namespace, false, true, selector)
 }
 
-// DoDelete deletes the resources identified in a given YAML string
-func (i *Info) DoDelete(yaml string, namespace string) error {
+// MultiYamlDelete deletes the resources identified in a given YAML string
+func (i *Info) MultiYamlDelete(yaml string, namespace string) error {
 	return i.doApplyOrDelete(yaml, namespace, true, false, nil)
+}
+
+// singleYamlCreateOrUpdate creates or updates a new resource from a single YAML spec
+func (i *Info) singleYamlCreateOrUpdate(obj *unstructured.Unstructured, namespace string, doCreate bool) error {
+	dr, _, err := i.getDynamicRest(obj, namespace)
+	if err != nil {
+		return err
+	}
+	if doCreate {
+		_, err = dr.Create(context.TODO(), obj, metav1.CreateOptions{
+			FieldManager: fieldManagerName,
+		})
+	} else {
+		_, err = dr.Update(context.TODO(), obj, metav1.UpdateOptions{
+			FieldManager: fieldManagerName,
+		})
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SingleObjectCreate creates a new resource from a single unstructured object
+func (i *Info) SingleObjectCreate(obj *unstructured.Unstructured, namespace string) error {
+	return i.singleYamlCreateOrUpdate(obj, namespace, true)
+}
+
+// SingleObjectUpdate updates an existing object from a single unstructured object
+func (i *Info) SingleObjectUpdate(obj *unstructured.Unstructured, namespace string) error {
+	return i.singleYamlCreateOrUpdate(obj, namespace, false)
 }

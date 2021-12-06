@@ -15,34 +15,14 @@ import { SimpleModal } from '@app/Components/SimpleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewCHIModal } from '@app/CHIs/NewCHIModal';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
-
-interface Container {
-  name: string
-  state: string
-  image: string
-}
-
-interface CHClusterPod {
-  cluster_name: string
-  name: string
-  status: string
-  containers: Array<Container>
-}
-
-interface CHI {
-  name: string
-  namespace: string
-  status: string
-  clusters: bigint
-  hosts: bigint
-  external_url: string
-  ch_cluster_pods: Array<CHClusterPod>
-}
+import { CHI } from '@app/CHIs/model';
+import { UpdateCHIModal } from '@app/CHIs/UpdateCHIModal';
 
 export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [CHIs, setCHIs] = useState(new Array<CHI>())
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<CHI|undefined>(undefined)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [activeItem, setActiveItem] = useState<CHI|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const addAlert = props.addAlert
   const fetchData = () => {
@@ -67,14 +47,14 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [])
   const onDeleteClick = (item: CHI) => {
-    setItemToDelete(item)
+    setActiveItem(item)
     setIsDeleteModalOpen(true)
   }
   const onDeleteActionClick = () => {
-    if (itemToDelete === undefined) {
+    if (activeItem === undefined) {
       return
     }
-    fetchWithErrorHandling(`/api/v1/chis/${itemToDelete.namespace}/${itemToDelete.name}`, 'DELETE',
+    fetchWithErrorHandling(`/api/v1/chis/${activeItem.namespace}/${activeItem.name}`, 'DELETE',
       undefined,
       undefined,
       (response, text, error) => {
@@ -84,7 +64,15 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
   }
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false)
-    setItemToDelete(undefined)
+    setActiveItem(undefined)
+  }
+  const onEditClick = (item: CHI) => {
+    setActiveItem(item)
+    setIsEditModalOpen(true)
+  }
+  const closeEditModal = () => {
+    setIsEditModalOpen(false)
+    setActiveItem(undefined)
   }
   const retrieveErrorPane = retrieveError === undefined ? null : (
     <Alert variant="danger" title={retrieveError} isInline/>
@@ -100,9 +88,15 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
         onActionClick={onDeleteActionClick}
         onClose={closeDeleteModal}
       >
-        The ClickHouse Installation named <b>{itemToDelete ? itemToDelete.name : "UNKNOWN"}</b> will
-        be removed from the <b>{itemToDelete ? itemToDelete.namespace : "UNKNOWN"}</b> namespace.
+        The ClickHouse Installation named <b>{activeItem ? activeItem.name : "UNKNOWN"}</b> will
+        be removed from the <b>{activeItem ? activeItem.namespace : "UNKNOWN"}</b> namespace.
       </SimpleModal>
+      <UpdateCHIModal
+        addAlert={props.addAlert}
+        closeModal={closeEditModal}
+        isModalOpen={isEditModalOpen}
+        CHIName={activeItem ? activeItem.name : ""}
+        CHINamespace={activeItem ? activeItem.namespace : ""} />
       <Split>
         <SplitItem isFilled>
           <Title headingLevel="h1" size="lg">
@@ -134,6 +128,11 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
         actions={(item: CHI) => {
           return {
             items: [
+              {
+                title: "Edit",
+                variant: "primary",
+                onClick: () => {onEditClick(item)}
+              },
               {
                 title: "Delete",
                 variant: "danger",

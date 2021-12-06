@@ -30,6 +30,19 @@ type OperatorPod struct {
 	Version string `json:"version" description:"version of the pod"`
 }
 
+type ResourceSpecMetadata struct {
+	Name            string `json:"name"`
+	Namespace       string `json:"namespace"`
+	ResourceVersion string `json:"resourceVersion"`
+}
+
+type ResourceSpec struct {
+	APIVersion string               `json:"apiVersion"`
+	Kind       string               `json:"kind"`
+	Metadata   ResourceSpecMetadata `json:"metadata"`
+	Spec       interface{}          `json:"spec"`
+}
+
 type Chi struct {
 	Name          string         `json:"name" description:"name of the ClickHouse installation"`
 	Namespace     string         `json:"namespace" description:"namespace the installation is in"`
@@ -37,6 +50,7 @@ type Chi struct {
 	Clusters      int            `json:"clusters" description:"number of clusters in the installation"`
 	Hosts         int            `json:"hosts" description:"number of hosts in the installation"`
 	ExternalURL   string         `json:"external_url" description:"external URL of the loadbalancer service"`
+	ResourceYAML  string         `json:"resource_yaml" description:"Kubernetes YAML spec of the CHI resource"`
 	CHClusterPods []CHClusterPod `json:"ch_cluster_pods" description:"ClickHouse cluster pods"`
 }
 

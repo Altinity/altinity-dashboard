@@ -182,7 +182,7 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 			// Delete cluster-wide resources if we're deleting the last operator
 			namespace = ""
 		}
-		err = k.DoDelete(deploy, namespace)
+		err = k.MultiYamlDelete(deploy, namespace)
 		if err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 			}
 		}
 		if isUpgrade {
-			err = k.DoApplySelectively(deploy, namespace,
+			err = k.MultiYamlApplySelectively(deploy, namespace,
 				func(candidates []*unstructured.Unstructured) []*unstructured.Unstructured {
 					selected := make([]*unstructured.Unstructured, 0)
 					for _, c := range candidates {
@@ -208,7 +208,7 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 				return err
 			}
 		} else {
-			err = k.DoApply(deploy, namespace)
+			err = k.MultiYamlApply(deploy, namespace)
 			if err != nil {
 				return err
 			}

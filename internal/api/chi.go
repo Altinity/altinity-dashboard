@@ -7,6 +7,7 @@ import (
 	"github.com/altinity/altinity-dashboard/internal/utils"
 	chopv1 "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	"github.com/emicklei/go-restful/v3"
+	"github.com/kubernetes-sigs/yaml"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -46,9 +47,23 @@ func (c *ChiResource) WebService(_ *WebServiceInfo) (*restful.WebService, error)
 		Writes([]Chi{}).
 		Returns(200, "OK", []Chi{}))
 
-	ws.Route(ws.PUT("/{namespace}").To(c.handlePutCHI).
-		Doc("deploy a ClickHouse Installation from YAML").
+	ws.Route(ws.GET("/{namespace}/{name}").To(c.getCHIs).
+		Doc("get a single ClickHouse Installation").
+		Param(ws.PathParameter("namespace", "namespace to get from").DataType("string")).
+		Param(ws.PathParameter("name", "name of the CHI to get").DataType("string")).
+		Writes([]Chi{}).
+		Returns(200, "OK", []Chi{}))
+
+	ws.Route(ws.POST("/{namespace}").To(c.handlePostCHI).
+		Doc("deploy a new ClickHouse Installation from YAML").
 		Param(ws.PathParameter("namespace", "namespace to deploy to").DataType("string")).
+		Reads(ChiPutParams{}).
+		Returns(200, "OK", nil))
+
+	ws.Route(ws.PATCH("/{namespace}/{name}").To(c.handlePatchCHI).
+		Doc("update an existing ClickHouse Installation from YAML").
+		Param(ws.PathParameter("namespace", "namespace the CHI is in").DataType("string")).
+		Param(ws.PathParameter("name", "name of the CHI to update").DataType("string")).
 		Reads(ChiPutParams{}).
 		Returns(200, "OK", nil))
 
@@ -66,10 +81,20 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	if !ok {
 		namespace = ""
 	}
+	name, ok := request.PathParameters()["name"]
+	if !ok {
+		name = ""
+	}
 
 	k := utils.GetK8s()
+	var fieldSelector string
+	if name != "" {
+		fieldSelector = "metadata.name=" + name
+	}
 	chis, err := k.ChopClientset.ClickhouseV1().ClickHouseInstallations(namespace).List(
-		context.TODO(), metav1.ListOptions{})
+		context.TODO(), metav1.ListOptions{
+			FieldSelector: fieldSelector,
+		})
 	if err != nil {
 		webError(response, http.StatusBadRequest, "listing CHIs", err)
 		return
@@ -85,7 +110,8 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 				},
 				MatchExpressions: nil,
 			}
-			pods, err := getK8sPodsFromLabelSelector(chi.Namespace, sel)
+			var pods *v1.PodList
+			pods, err = getK8sPodsFromLabelSelector(chi.Namespace, sel)
 			if err == nil {
 				for _, pod := range getPodsFromK8sPods(pods) {
 					chClusterPod := CHClusterPod{
@@ -130,6 +156,20 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 				}
 			}
 		}
+		var y []byte
+		y, err = yaml.Marshal(ResourceSpec{
+			APIVersion: chi.APIVersion,
+			Kind:       chi.Kind,
+			Metadata: ResourceSpecMetadata{
+				Name:            chi.Name,
+				Namespace:       chi.Namespace,
+				ResourceVersion: chi.ResourceVersion,
+			},
+			Spec: chi.Spec,
+		})
+		if err != nil {
+			y = nil
+		}
 		list = append(list, Chi{
 			Name:          chi.Name,
 			Namespace:     chi.Namespace,
@@ -137,6 +177,7 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 			Clusters:      chi.Status.ClustersCount,
 			Hosts:         chi.Status.HostsCount,
 			ExternalURL:   externalURL,
+			ResourceYAML:  string(y),
 			CHClusterPods: chClusterPods,
 		})
 	}
@@ -144,14 +185,22 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 }
 
 var ErrNamespaceRequired = errors.New("namespace is required")
-var ErrNameAndNamespaceRequired = errors.New("name and namespace are required")
+var ErrNameRequired = errors.New("name is required")
 var ErrYAMLMustBeCHI = errors.New("YAML document must contain a single ClickhouseInstallation definition")
 
-func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.Response) {
+func (c *ChiResource) handlePostOrPatchCHI(request *restful.Request, response *restful.Response, doPost bool) {
 	namespace, ok := request.PathParameters()["namespace"]
 	if !ok || namespace == "" {
 		webError(response, http.StatusBadRequest, "processing request", ErrNamespaceRequired)
 		return
+	}
+	name := ""
+	if !doPost {
+		name, ok = request.PathParameters()["name"]
+		if !ok || name == "" {
+			webError(response, http.StatusBadRequest, "processing request", ErrNameRequired)
+			return
+		}
 	}
 
 	putParams := ChiPutParams{}
@@ -160,35 +209,54 @@ func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.R
 		webError(response, http.StatusBadRequest, "reading request body", err)
 		return
 	}
-	var rejected = false
-	err = utils.GetK8s().DoApplySelectively(putParams.YAML, namespace,
-		func(candidates []*unstructured.Unstructured) []*unstructured.Unstructured {
-			if len(candidates) != 1 {
-				rejected = true
-				return nil
-			}
-			if candidates[0].GetKind() != "ClickHouseInstallation" {
-				rejected = true
-				return nil
-			}
-			return candidates
-		})
-	if rejected {
+
+	k := utils.GetK8s()
+	var obj *unstructured.Unstructured
+	obj, err = k.DecodeYAMLToObject(putParams.YAML)
+	if err != nil {
+		webError(response, http.StatusBadRequest, "parsing YAML object", err)
+		return
+	}
+	if obj.GetAPIVersion() != "clickhouse.altinity.com/v1" ||
+		obj.GetKind() != "ClickHouseInstallation" ||
+		(!doPost && (obj.GetNamespace() != namespace ||
+			obj.GetName() != name)) {
 		webError(response, http.StatusBadRequest, "processing request", ErrYAMLMustBeCHI)
 		return
 	}
+	var errSource string
+	if doPost {
+		errSource = "creating CHI"
+		err = k.SingleObjectCreate(obj, namespace)
+	} else {
+		errSource = "updating CHI"
+		err = k.SingleObjectUpdate(obj, namespace)
+	}
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "applying CHI", err)
+		webError(response, http.StatusInternalServerError, errSource, err)
 		return
 	}
 	_ = response.WriteEntity(nil)
 }
 
+func (c *ChiResource) handlePostCHI(request *restful.Request, response *restful.Response) {
+	c.handlePostOrPatchCHI(request, response, true)
+}
+
+func (c *ChiResource) handlePatchCHI(request *restful.Request, response *restful.Response) {
+	c.handlePostOrPatchCHI(request, response, false)
+}
+
 func (c *ChiResource) handleDeleteCHI(request *restful.Request, response *restful.Response) {
-	namespace, ok1 := request.PathParameters()["namespace"]
-	name, ok2 := request.PathParameters()["name"]
-	if !ok1 || !ok2 || name == "" || namespace == "" {
-		webError(response, http.StatusBadRequest, "processing request", ErrNameAndNamespaceRequired)
+	namespace, ok := request.PathParameters()["namespace"]
+	if !ok || namespace == "" {
+		webError(response, http.StatusBadRequest, "processing request", ErrNamespaceRequired)
+		return
+	}
+	var name string
+	name, ok = request.PathParameters()["name"]
+	if !ok || name == "" {
+		webError(response, http.StatusBadRequest, "processing request", ErrNameRequired)
 		return
 	}
 

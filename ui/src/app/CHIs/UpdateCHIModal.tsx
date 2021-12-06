@@ -1,29 +1,33 @@
 import * as React from 'react';
-import { ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { useEffect, useState } from 'react';
+import { ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import {
-  AlertVariant, Bullseye,
-  Button,
-  EmptyState, EmptyStateBody, EmptyStateIcon, EmptyStateSecondaryActions, Grid, GridItem,
-  Modal, ModalVariant, Title
+  AlertVariant,
+  Bullseye,
+  Button, EmptyState, EmptyStateBody, EmptyStateIcon,
+  Grid,
+  GridItem,
+  Modal,
+  ModalVariant, Title
 } from '@patternfly/react-core';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
-import { NamespaceSelector } from '@app/Namespaces/NamespaceSelector';
 import { editor } from 'monaco-editor';
+import { StringHasher } from '@app/Components/StringHasher';
+import { CHI } from '@app/CHIs/model';
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import CodeIcon from '@patternfly/react-icons/dist/esm/icons/code-icon';
-import { ListSelector } from '@app/Components/ListSelector';
-import { StringHasher } from '@app/Components/StringHasher';
 
-export const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props: ToggleModalSubProps) => {
-  const { addAlert, isModalOpen } = props
+export interface UpdateCHIModalProps extends ToggleModalSubProps {
+  CHIName: string
+  CHINamespace: string
+}
+
+export const UpdateCHIModal: React.FunctionComponent<UpdateCHIModalProps> = (props) => {
+  const { addAlert, isModalOpen, CHIName, CHINamespace } = props
   const outerCloseModal = props.closeModal
-  const [selectedNamespace, setSelectedNamespace] = useState("")
   const [yaml, realSetYaml] = useState("")
-  const [exampleListValues, setExampleListValues] = useState(new Array<string>())
   const closeModal = (): void => {
-    setSelectedNamespace("")
     outerCloseModal()
   }
   const setYaml = (yaml: string) => {
@@ -37,7 +41,7 @@ export const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props:
     setYaml(editor.getValue())
   }
   const onDeployClick = (): void => {
-    fetchWithErrorHandling(`/api/v1/chis/${selectedNamespace}`, 'POST',
+    fetchWithErrorHandling(`/api/v1/chis/${CHINamespace}/${CHIName}`, 'PATCH',
       {
         yaml: yaml
       },
@@ -51,28 +55,35 @@ export const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props:
       })
   }
   useEffect(() => {
-    fetchWithErrorHandling(`/chi-examples/index.json`, 'GET',
-      undefined,
-      (response, body) => {
-        const ev = body ? body as string[] : []
-        setExampleListValues(ev)
-      },
-      () => {
-        setExampleListValues([])
-      }
-    )
-  }, [])
+    if (isModalOpen) {
+      fetchWithErrorHandling(`/api/v1/chis/${CHINamespace}/${CHIName}`, 'GET',
+        undefined,
+        (response, body) => {
+          if (typeof body === 'object') {
+            setYaml((body[0] as CHI).resource_yaml);
+          }
+        },
+        (response, text, error) => {
+          addAlert(`Error retrieving CHI: ${error}`, AlertVariant.danger)
+          closeModal()
+        }
+      )
+    } else {
+      setYaml("")
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [CHIName, CHINamespace, isModalOpen])
   return (
     <Modal
-      title="Deploy ClickHouse Installation"
+      title="Update ClickHouse Installation"
       variant={ModalVariant.large}
       isOpen={isModalOpen}
       onClose={closeModal}
       position="top"
       actions={[
         <Button key="deploy" variant="primary"
-                onClick={onDeployClick} isDisabled={selectedNamespace === ""}>
-          Deploy
+                onClick={onDeployClick}>
+          Update
         </Button>,
         <Button key="cancel" variant="link" onClick={closeModal}>
           Cancel
@@ -96,33 +107,9 @@ export const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props:
             <EmptyState height="400px">
               <EmptyStateIcon icon={CodeIcon} />
               <Title headingLevel="h4" size="lg">
-                Start editing
+                Update ClickHouse Installation
               </Title>
-              <EmptyStateBody>Drag and drop a file or click the upload icon above to upload one.</EmptyStateBody>
-              <EmptyStateSecondaryActions>
-                <Button variant="link" onClick={() => {setYaml(" ")}}>
-                  Start from scratch
-                </Button>
-              </EmptyStateSecondaryActions>
-              <div>
-                Or start from a predefined example:
-              </div>
-              <div className="wide-context-selector">
-                <ListSelector
-                  listValues={exampleListValues}
-                  onSelect={(value) => {
-                    fetchWithErrorHandling(`/chi-examples/${value}`, 'GET',
-                      undefined,
-                      (response, body) => {
-                        if (body && typeof(body) === 'string') {
-                          setYaml(body)
-                        }
-                      },
-                      undefined
-                    )
-                  }}
-                />
-              </div>
+              <EmptyStateBody>Loading current YAML spec...</EmptyStateBody>
             </EmptyState>
           )}
         />
@@ -133,10 +120,6 @@ export const NewCHIModal: React.FunctionComponent<ToggleModalSubProps> = (props:
             </Bullseye>
           </GridItem>
           <GridItem span={8}>
-            <div>
-              Select a Namespace To Deploy To:
-            </div>
-            <NamespaceSelector onSelect={setSelectedNamespace}/>
           </GridItem>
           <GridItem span={4}>
             Use the <StringHasher
