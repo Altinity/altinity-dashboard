@@ -19,7 +19,7 @@ type ChiResource struct {
 
 // ChiPutParams is the object for parameters to a CHI PUT request
 type ChiPutParams struct {
-	YAML      string `json:"yaml" description:"YAML of the CHI custom resource"`
+	YAML string `json:"yaml" description:"YAML of the CHI custom resource"`
 }
 
 // Name returns the name of the web service
@@ -62,7 +62,10 @@ func (c *ChiResource) WebService(wsi *WebServiceInfo) (*restful.WebService, erro
 }
 
 func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Response) {
-	namespace, _ := request.PathParameters()["namespace"]
+	namespace, ok := request.PathParameters()["namespace"]
+	if !ok {
+		namespace = ""
+	}
 
 	k := utils.GetK8s()
 	chis, err := k.ChopClientset.ClickhouseV1().ClickHouseInstallations(namespace).List(
@@ -142,7 +145,7 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 
 var ErrNamespaceRequired = errors.New("namespace is required")
 var ErrNameAndNamespaceRequired = errors.New("name and namespace are required")
-var YAMLMustBeCHI = errors.New("YAML document must contain a single ClickhouseInstallation definition")
+var ErrYAMLMustBeCHI = errors.New("YAML document must contain a single ClickhouseInstallation definition")
 
 func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.Response) {
 	namespace, ok := request.PathParameters()["namespace"]
@@ -171,7 +174,7 @@ func (c *ChiResource) handlePutCHI(request *restful.Request, response *restful.R
 			return candidates
 		})
 	if rejected {
-		webError(response, http.StatusBadRequest, "processing request", YAMLMustBeCHI)
+		webError(response, http.StatusBadRequest, "processing request", ErrYAMLMustBeCHI)
 		return
 	}
 	if err != nil {
