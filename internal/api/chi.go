@@ -28,7 +28,7 @@ func (c *ChiResource) Name() string {
 }
 
 // WebService creates a new service that can handle REST requests
-func (c *ChiResource) WebService(wsi *WebServiceInfo) (*restful.WebService, error) {
+func (c *ChiResource) WebService(_ *WebServiceInfo) (*restful.WebService, error) {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/chis").

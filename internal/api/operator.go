@@ -140,7 +140,7 @@ func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
 	return list, nil
 }
 
-func (o *OperatorResource) handleGetOps(request *restful.Request, response *restful.Response) {
+func (o *OperatorResource) handleGetOps(_ *restful.Request, response *restful.Response) {
 	ops, err := o.getOperators("")
 	if err != nil {
 		webError(response, http.StatusInternalServerError, "getting operators", err)

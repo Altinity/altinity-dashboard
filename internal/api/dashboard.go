@@ -20,7 +20,7 @@ func (d *DashboardResource) Name() string {
 }
 
 // WebService creates a new service that can handle REST requests
-func (d *DashboardResource) WebService(wsi *WebServiceInfo) (*restful.WebService, error) {
+func (d *DashboardResource) WebService(_ *WebServiceInfo) (*restful.WebService, error) {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/dashboard").
@@ -34,7 +34,7 @@ func (d *DashboardResource) WebService(wsi *WebServiceInfo) (*restful.WebService
 	return ws, nil
 }
 
-func (d *DashboardResource) getDashboard(request *restful.Request, response *restful.Response) {
+func (d *DashboardResource) getDashboard(_ *restful.Request, response *restful.Response) {
 	dash := Dashboard{}
 
 	k := utils.GetK8s()

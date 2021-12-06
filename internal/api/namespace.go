@@ -19,7 +19,7 @@ func (n *NamespaceResource) Name() string {
 }
 
 // WebService creates a new service that can handle REST requests
-func (n *NamespaceResource) WebService(wsi *WebServiceInfo) (*restful.WebService, error) {
+func (n *NamespaceResource) WebService(_ *WebServiceInfo) (*restful.WebService, error) {
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/namespaces").
@@ -38,7 +38,7 @@ func (n *NamespaceResource) WebService(wsi *WebServiceInfo) (*restful.WebService
 	return ws, nil
 }
 
-func (n *NamespaceResource) getNamespaces(request *restful.Request, response *restful.Response) {
+func (n *NamespaceResource) getNamespaces(_ *restful.Request, response *restful.Response) {
 	namespaces, err := utils.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		webError(response, http.StatusInternalServerError, "listing namespaces", err)
