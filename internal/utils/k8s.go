@@ -276,9 +276,11 @@ var ErrOperatorNotDeployed = errors.New("the ClickHouse Operator is not fully de
 func (i *Info) singleYamlCreateOrUpdate(obj *unstructured.Unstructured, namespace string, doCreate bool) error {
 	dr, _, err := i.getDynamicRest(obj, namespace)
 	if err != nil {
-		nkm, ok := err.(*meta.NoKindMatchError)
-		if ok && strings.HasPrefix(nkm.GroupKind.Kind, "ClickHouse") {
-			return ErrOperatorNotDeployed
+		var nkm *meta.NoKindMatchError
+		if errors.As(err, &nkm) {
+			if strings.HasPrefix(nkm.GroupKind.Kind, "ClickHouse") {
+				return ErrOperatorNotDeployed
+			}
 		}
 		return err
 	}

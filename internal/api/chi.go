@@ -98,11 +98,12 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 		})
 	if err != nil {
 		var se *errors2.StatusError
-		se, ok = err.(*errors2.StatusError)
-		if ok && se.ErrStatus.Reason == metav1.StatusReasonNotFound &&
-			se.ErrStatus.Details.Group == "clickhouse.altinity.com" {
-			webError(response, http.StatusBadRequest, "listing CHIs", utils.ErrOperatorNotDeployed)
-			return
+		if errors.As(err, &se) {
+			if se.ErrStatus.Reason == metav1.StatusReasonNotFound &&
+				se.ErrStatus.Details.Group == "clickhouse.altinity.com" {
+				webError(response, http.StatusBadRequest, "listing CHIs", utils.ErrOperatorNotDeployed)
+				return
+			}
 		}
 		webError(response, http.StatusBadRequest, "listing CHIs", err)
 		return
