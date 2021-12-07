@@ -13,10 +13,9 @@ import { ReactElement, useEffect, useState } from 'react';
 import { ToggleModal } from '@app/Components/ToggleModal';
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
-import { NewCHIModal } from '@app/CHIs/NewCHIModal';
+import { CHIModal } from '@app/CHIs/CHIModal';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
 import { CHI } from '@app/CHIs/model';
-import { UpdateCHIModal } from '@app/CHIs/UpdateCHIModal';
 
 export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [CHIs, setCHIs] = useState(new Array<CHI>())
@@ -91,12 +90,14 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
         The ClickHouse Installation named <b>{activeItem ? activeItem.name : "UNKNOWN"}</b> will
         be removed from the <b>{activeItem ? activeItem.namespace : "UNKNOWN"}</b> namespace.
       </SimpleModal>
-      <UpdateCHIModal
+      <CHIModal
         addAlert={props.addAlert}
         closeModal={closeEditModal}
+        isUpdate={true}
         isModalOpen={isEditModalOpen}
         CHIName={activeItem ? activeItem.name : ""}
-        CHINamespace={activeItem ? activeItem.namespace : ""} />
+        CHINamespace={activeItem ? activeItem.namespace : ""}
+      />
       <Split>
         <SplitItem isFilled>
           <Title headingLevel="h1" size="lg">
@@ -104,7 +105,7 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
           </Title>
         </SplitItem>
         <SplitItem>
-          <ToggleModal modal={NewCHIModal} addAlert={addAlert}/>
+          <ToggleModal modal={CHIModal} addAlert={addAlert}/>
         </SplitItem>
       </Split>
       {retrieveErrorPane}
