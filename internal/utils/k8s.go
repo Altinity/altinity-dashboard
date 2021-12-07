@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"path/filepath"
+	"strings"
 )
 
 type Info struct {
@@ -269,10 +270,16 @@ func (i *Info) MultiYamlDelete(yaml string, namespace string) error {
 	return i.doApplyOrDelete(yaml, namespace, true, false, nil)
 }
 
+var ErrOperatorNotDeployed = errors.New("the ClickHouse Operator is not fully deployed")
+
 // singleYamlCreateOrUpdate creates or updates a new resource from a single YAML spec
 func (i *Info) singleYamlCreateOrUpdate(obj *unstructured.Unstructured, namespace string, doCreate bool) error {
 	dr, _, err := i.getDynamicRest(obj, namespace)
 	if err != nil {
+		nkm, ok := err.(*meta.NoKindMatchError)
+		if ok && strings.HasPrefix(nkm.GroupKind.Kind, "ClickHouse") {
+			return ErrOperatorNotDeployed
+		}
 		return err
 	}
 	if doCreate {
