@@ -101,11 +101,11 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 		if errors.As(err, &se) {
 			if se.ErrStatus.Reason == metav1.StatusReasonNotFound &&
 				se.ErrStatus.Details.Group == "clickhouse.altinity.com" {
-				webError(response, http.StatusBadRequest, "listing CHIs", utils.ErrOperatorNotDeployed)
+				webError(response, http.StatusBadRequest, utils.ErrOperatorNotDeployed)
 				return
 			}
 		}
-		webError(response, http.StatusBadRequest, "listing CHIs", err)
+		webError(response, http.StatusBadRequest, err)
 		return
 	}
 	list := make([]Chi, 0, len(chis.Items))
@@ -200,14 +200,14 @@ var ErrYAMLMustBeCHI = errors.New("YAML document must contain a single Clickhous
 func (c *ChiResource) handlePostOrPatchCHI(request *restful.Request, response *restful.Response, doPost bool) {
 	namespace, ok := request.PathParameters()["namespace"]
 	if !ok || namespace == "" {
-		webError(response, http.StatusBadRequest, "processing request", ErrNamespaceRequired)
+		webError(response, http.StatusBadRequest, ErrNamespaceRequired)
 		return
 	}
 	name := ""
 	if !doPost {
 		name, ok = request.PathParameters()["name"]
 		if !ok || name == "" {
-			webError(response, http.StatusBadRequest, "processing request", ErrNameRequired)
+			webError(response, http.StatusBadRequest, ErrNameRequired)
 			return
 		}
 	}
@@ -215,7 +215,7 @@ func (c *ChiResource) handlePostOrPatchCHI(request *restful.Request, response *r
 	putParams := ChiPutParams{}
 	err := request.ReadEntity(&putParams)
 	if err != nil {
-		webError(response, http.StatusBadRequest, "reading request body", err)
+		webError(response, http.StatusBadRequest, err)
 		return
 	}
 
@@ -223,26 +223,23 @@ func (c *ChiResource) handlePostOrPatchCHI(request *restful.Request, response *r
 	var obj *unstructured.Unstructured
 	obj, err = k.DecodeYAMLToObject(putParams.YAML)
 	if err != nil {
-		webError(response, http.StatusBadRequest, "parsing YAML object", err)
+		webError(response, http.StatusBadRequest, err)
 		return
 	}
 	if obj.GetAPIVersion() != "clickhouse.altinity.com/v1" ||
 		obj.GetKind() != "ClickHouseInstallation" ||
 		(!doPost && (obj.GetNamespace() != namespace ||
 			obj.GetName() != name)) {
-		webError(response, http.StatusBadRequest, "processing request", ErrYAMLMustBeCHI)
+		webError(response, http.StatusBadRequest, ErrYAMLMustBeCHI)
 		return
 	}
-	var errSource string
 	if doPost {
-		errSource = "creating CHI"
 		err = k.SingleObjectCreate(obj, namespace)
 	} else {
-		errSource = "updating CHI"
 		err = k.SingleObjectUpdate(obj, namespace)
 	}
 	if err != nil {
-		webError(response, http.StatusInternalServerError, errSource, err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 	_ = response.WriteEntity(nil)
@@ -259,13 +256,13 @@ func (c *ChiResource) handlePatchCHI(request *restful.Request, response *restful
 func (c *ChiResource) handleDeleteCHI(request *restful.Request, response *restful.Response) {
 	namespace, ok := request.PathParameters()["namespace"]
 	if !ok || namespace == "" {
-		webError(response, http.StatusBadRequest, "processing request", ErrNamespaceRequired)
+		webError(response, http.StatusBadRequest, ErrNamespaceRequired)
 		return
 	}
 	var name string
 	name, ok = request.PathParameters()["name"]
 	if !ok || name == "" {
-		webError(response, http.StatusBadRequest, "processing request", ErrNameRequired)
+		webError(response, http.StatusBadRequest, ErrNameRequired)
 		return
 	}
 
@@ -273,7 +270,7 @@ func (c *ChiResource) handleDeleteCHI(request *restful.Request, response *restfu
 		ClickHouseInstallations(namespace).
 		Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "deleting CHI", err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 

@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/utils"
+	chopv1 "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	"github.com/emicklei/go-restful/v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"net/http"
@@ -143,7 +145,7 @@ func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
 func (o *OperatorResource) handleGetOps(_ *restful.Request, response *restful.Response) {
 	ops, err := o.getOperators("")
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "getting operators", err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 	_ = response.WriteEntity(ops)
@@ -156,6 +158,9 @@ func processTemplate(template string, vars map[string]string) string {
 	}
 	return template
 }
+
+
+var ErrStillHaveCHIs = errors.New("cannot delete the last clickhouse-operator while CHI resources still exist")
 
 // deployOrDeleteOperator deploys or deletes a clickhouse-operator
 func (o *OperatorResource) deployOrDeleteOperator(namespace string, version string, doDelete bool) error {
@@ -179,7 +184,21 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 
 	if doDelete {
 		if len(ops) == 1 && ops[0].Namespace == namespace {
-			// Delete cluster-wide resources if we're deleting the last operator
+			// Before deleting the last operator, make sure there won't be orphaned CHIs
+			var chis *chopv1.ClickHouseInstallationList
+			chis, err = k.ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
+				context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				var se *errors2.StatusError
+				if !errors.As(err, &se) || se.ErrStatus.Reason != metav1.StatusReasonNotFound ||
+						se.ErrStatus.Details.Group != "clickhouse.altinity.com" {
+					return err
+				}
+			}
+			if len(chis.Items) > 0 {
+				return ErrStillHaveCHIs
+			}
+			// Delete cluster-wide resources (ie, CRDs) if we're really deleting the last operator
 			namespace = ""
 		}
 		err = k.MultiYamlDelete(deploy, namespace)
@@ -229,7 +248,7 @@ func (o *OperatorResource) waitForOperator(namespace string, timeout time.Durati
 			return &ops[0], nil
 		}
 		if time.Now().After(startTime.Add(timeout)) {
-			return nil, errors.NewTimeoutError("timed out waiting for status", 30)
+			return nil, errors2.NewTimeoutError("timed out waiting for status", 30)
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
@@ -238,24 +257,23 @@ func (o *OperatorResource) waitForOperator(namespace string, timeout time.Durati
 func (o *OperatorResource) handlePutOp(request *restful.Request, response *restful.Response) {
 	namespace := request.PathParameter("namespace")
 	if namespace == "" {
-		webError(response, http.StatusBadRequest, "processing request",
-			restful.ServiceError{Message: "namespace is required"})
+		webError(response, http.StatusBadRequest, ErrNamespaceRequired)
 		return
 	}
 	putParams := OperatorPutParams{}
 	err := request.ReadEntity(&putParams)
 	if err != nil {
-		webError(response, http.StatusBadRequest, "reading request body", err)
+		webError(response, http.StatusBadRequest, err)
 		return
 	}
 	err = o.deployOrDeleteOperator(namespace, putParams.Version, false)
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "applying operator", err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 	op, err := o.waitForOperator(namespace, 15*time.Second)
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "waiting for operator deployment", err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 	_ = response.WriteEntity(op)
@@ -264,13 +282,12 @@ func (o *OperatorResource) handlePutOp(request *restful.Request, response *restf
 func (o *OperatorResource) handleDeleteOp(request *restful.Request, response *restful.Response) {
 	namespace := request.PathParameter("namespace")
 	if namespace == "" {
-		webError(response, http.StatusBadRequest, "processing request",
-			restful.ServiceError{Message: "namespace is required"})
+		webError(response, http.StatusBadRequest, ErrNamespaceRequired)
 		return
 	}
 	err := o.deployOrDeleteOperator(namespace, "", true)
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "deleting operator", err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 	_ = response.WriteEntity(nil)

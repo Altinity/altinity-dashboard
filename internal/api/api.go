@@ -2,7 +2,6 @@ package api
 
 import (
 	"embed"
-	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"log"
 )
@@ -20,10 +19,9 @@ type WebService interface {
 
 var ErrorsToConsole bool
 
-func webError(response *restful.Response, status int, source string, err error) {
-	logErr := fmt.Errorf(fmt.Sprintf("Error %s: %v", source, err)) // nolint // dynamic errors wanted here
+func webError(response *restful.Response, status int, err error) {
 	if ErrorsToConsole {
-		log.Printf("%s\n", logErr)
+		log.Printf("%s\n", err)
 	}
-	_ = response.WriteError(status, logErr)
+	_ = response.WriteError(status, err)
 }

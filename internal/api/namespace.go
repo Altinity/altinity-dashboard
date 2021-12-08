@@ -41,7 +41,7 @@ func (n *NamespaceResource) WebService(_ *WebServiceInfo) (*restful.WebService, 
 func (n *NamespaceResource) getNamespaces(_ *restful.Request, response *restful.Response) {
 	namespaces, err := utils.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "listing namespaces", err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 	list := make([]Namespace, 0, len(namespaces.Items))
@@ -57,7 +57,7 @@ func (n *NamespaceResource) createNamespace(request *restful.Request, response *
 	namespace := new(Namespace)
 	err := request.ReadEntity(&namespace)
 	if err != nil {
-		webError(response, http.StatusBadRequest, "reading request body", err)
+		webError(response, http.StatusBadRequest, err)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (n *NamespaceResource) createNamespace(request *restful.Request, response *
 		Limit:         1,
 	})
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "listing namespaces", err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 	if len(namespaces.Items) > 0 {
@@ -86,7 +86,7 @@ func (n *NamespaceResource) createNamespace(request *restful.Request, response *
 		},
 		metav1.CreateOptions{})
 	if err != nil {
-		webError(response, http.StatusInternalServerError, "creating namespace", err)
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
 	_ = response.WriteEntity(namespace)
