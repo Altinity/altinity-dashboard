@@ -39,7 +39,9 @@ func (n *NamespaceResource) WebService(_ *WebServiceInfo) (*restful.WebService, 
 }
 
 func (n *NamespaceResource) getNamespaces(_ *restful.Request, response *restful.Response) {
-	namespaces, err := utils.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
+	namespaces, err := k.Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		webError(response, http.StatusInternalServerError, err)
 		return
@@ -62,8 +64,9 @@ func (n *NamespaceResource) createNamespace(request *restful.Request, response *
 	}
 
 	// Check if the namespace already exists
-	k := utils.GetK8s().Clientset
-	namespaces, err := utils.GetK8s().Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
+	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
+	namespaces, err := k.Clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
 		FieldSelector: "metadata.name=" + namespace.Name,
 		Limit:         1,
 	})
@@ -77,7 +80,7 @@ func (n *NamespaceResource) createNamespace(request *restful.Request, response *
 	}
 
 	// Create the namespace
-	_, err = k.CoreV1().Namespaces().Create(
+	_, err = k.Clientset.CoreV1().Namespaces().Create(
 		context.TODO(),
 		&v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{

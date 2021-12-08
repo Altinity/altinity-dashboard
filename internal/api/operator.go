@@ -12,6 +12,7 @@ import (
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -55,7 +56,7 @@ func (o *OperatorResource) WebService(wsi *WebServiceInfo) (*restful.WebService,
 		Returns(200, "OK", []Operator{}))
 
 	ws.Route(ws.PUT("/{namespace}").To(o.handlePutOp).
-		Doc("deploy an operator").
+		Doc("deploy or update an operator").
 		Param(ws.PathParameter("namespace", "namespace to deploy to").DataType("string")).
 		Reads(OperatorPutParams{}).
 		Returns(200, "OK", Operator{}))
@@ -96,7 +97,9 @@ func (o *OperatorResource) getOperatorPodsFromDeployment(namespace string, deplo
 }
 
 func (o *OperatorResource) getOperators(namespace string) ([]Operator, error) {
-	deployments, err := utils.GetK8s().Clientset.AppsV1().Deployments(namespace).List(
+	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
+	deployments, err := k.Clientset.AppsV1().Deployments(namespace).List(
 		context.TODO(), metav1.ListOptions{
 			LabelSelector: "app=clickhouse-operator",
 		})
@@ -175,6 +178,7 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 
 	// Get existing operators
 	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
 	var ops []Operator
 	ops, err := o.getOperators("")
 	if err != nil {
@@ -272,6 +276,14 @@ func (o *OperatorResource) handlePutOp(request *restful.Request, response *restf
 	}
 	op, err := o.waitForOperator(namespace, 15*time.Second)
 	if err != nil {
+		webError(response, http.StatusInternalServerError, err)
+		return
+	}
+	k := utils.GetK8s()
+	k.ReleaseK8s()
+	err = k.Reinit()
+	if err != nil {
+		log.Printf("Error reinitializing the Kubernetes client: %s", err)
 		webError(response, http.StatusInternalServerError, err)
 		return
 	}

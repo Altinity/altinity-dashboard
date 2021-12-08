@@ -35,7 +35,9 @@ func getK8sPodsFromLabelSelector(namespace string, selector *metav1.LabelSelecto
 	if err != nil {
 		return nil, err
 	}
-	pods, err := utils.GetK8s().Clientset.CoreV1().Pods(namespace).List(context.TODO(),
+	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
+	pods, err := k.Clientset.CoreV1().Pods(namespace).List(context.TODO(),
 		metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(ls).String(),
 		},
@@ -51,7 +53,10 @@ func getK8sServicesFromLabelSelector(namespace string, selector *metav1.LabelSel
 	if err != nil {
 		return nil, err
 	}
-	services, err := utils.GetK8s().Clientset.CoreV1().Services(namespace).List(context.TODO(),
+	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
+	var services *corev1.ServiceList
+	services, err = k.Clientset.CoreV1().Services(namespace).List(context.TODO(),
 		metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(ls).String(),
 		},

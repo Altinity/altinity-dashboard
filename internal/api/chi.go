@@ -12,6 +12,7 @@ import (
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"log"
 	"net/http"
 )
 
@@ -88,26 +89,48 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	}
 
 	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
 	var fieldSelector string
 	if name != "" {
 		fieldSelector = "metadata.name=" + name
 	}
-	chis, err := k.ChopClientset.ClickhouseV1().ClickHouseInstallations(namespace).List(
-		context.TODO(), metav1.ListOptions{
-			FieldSelector: fieldSelector,
-		})
-	if err != nil {
-		var se *errors2.StatusError
-		if errors.As(err, &se) {
-			if se.ErrStatus.Reason == metav1.StatusReasonNotFound &&
-				se.ErrStatus.Details.Group == "clickhouse.altinity.com" {
-				webError(response, http.StatusBadRequest, utils.ErrOperatorNotDeployed)
-				return
+
+	getCHIs := func() (*chopv1.ClickHouseInstallationList, error) {
+		chis, err := k.ChopClientset.ClickhouseV1().ClickHouseInstallations(namespace).List(
+			context.TODO(), metav1.ListOptions{
+				FieldSelector: fieldSelector,
+			})
+		if err != nil {
+			var se *errors2.StatusError
+			if errors.As(err, &se) {
+				if se.ErrStatus.Reason == metav1.StatusReasonNotFound &&
+					se.ErrStatus.Details.Group == "clickhouse.altinity.com" {
+					return nil, utils.ErrOperatorNotDeployed
+				}
 			}
+			return nil, err
 		}
-		webError(response, http.StatusBadRequest, err)
+		return chis, nil
+	}
+	chis, err := getCHIs()
+	if errors.Is(err, utils.ErrOperatorNotDeployed) {
+		// Before returning ErrOperatorNotDeployed, try reinitializing the k8s client, which may
+		// be holding old information in its cache.  (For example, it may not know about a CRD.)
+		k.ReleaseK8s()
+		err = k.Reinit()
+		k = utils.GetK8s()
+		if err != nil {
+			log.Printf("Error reinitializing the Kubernetes client: %s", err)
+			webError(response, http.StatusInternalServerError, err)
+			return
+		}
+		chis, err = getCHIs()
+	}
+	if err != nil {
+		webError(response, http.StatusInternalServerError, err)
 		return
 	}
+
 	list := make([]Chi, 0, len(chis.Items))
 	for _, chi := range chis.Items {
 		chClusterPods := make([]CHClusterPod, 0)
@@ -220,8 +243,9 @@ func (c *ChiResource) handlePostOrPatchCHI(request *restful.Request, response *r
 	}
 
 	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
 	var obj *unstructured.Unstructured
-	obj, err = k.DecodeYAMLToObject(putParams.YAML)
+	obj, err = utils.DecodeYAMLToObject(putParams.YAML)
 	if err != nil {
 		webError(response, http.StatusBadRequest, err)
 		return
@@ -266,7 +290,9 @@ func (c *ChiResource) handleDeleteCHI(request *restful.Request, response *restfu
 		return
 	}
 
-	err := utils.GetK8s().ChopClientset.ClickhouseV1().
+	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
+	err := k.ChopClientset.ClickhouseV1().
 		ClickHouseInstallations(namespace).
 		Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err != nil {

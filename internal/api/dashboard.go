@@ -38,6 +38,7 @@ func (d *DashboardResource) getDashboard(_ *restful.Request, response *restful.R
 	dash := Dashboard{}
 
 	k := utils.GetK8s()
+	defer func() { k.ReleaseK8s() }()
 	dash.KubeCluster = k.Config.Host
 	sv, err := k.Clientset.ServerVersion()
 	if err == nil {
@@ -48,7 +49,7 @@ func (d *DashboardResource) getDashboard(_ *restful.Request, response *restful.R
 
 	// Get clickhouse-operator counts
 	var chops *v1.DeploymentList
-	chops, err = utils.GetK8s().Clientset.AppsV1().Deployments("").List(
+	chops, err = k.Clientset.AppsV1().Deployments("").List(
 		context.TODO(), metav1.ListOptions{
 			LabelSelector: "app=clickhouse-operator",
 		})
@@ -67,7 +68,7 @@ func (d *DashboardResource) getDashboard(_ *restful.Request, response *restful.R
 
 	// Get CHI counts
 	var chis *chopv1.ClickHouseInstallationList
-	chis, err = utils.GetK8s().ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
+	chis, err = k.ChopClientset.ClickhouseV1().ClickHouseInstallations("").List(
 		context.TODO(), metav1.ListOptions{})
 	if err == nil {
 		dash.ChiCount = len(chis.Items)
