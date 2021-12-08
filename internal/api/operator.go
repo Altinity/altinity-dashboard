@@ -159,7 +159,6 @@ func processTemplate(template string, vars map[string]string) string {
 	return template
 }
 
-
 var ErrStillHaveCHIs = errors.New("cannot delete the last clickhouse-operator while CHI resources still exist")
 
 // deployOrDeleteOperator deploys or deletes a clickhouse-operator
@@ -191,7 +190,7 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 			if err != nil {
 				var se *errors2.StatusError
 				if !errors.As(err, &se) || se.ErrStatus.Reason != metav1.StatusReasonNotFound ||
-						se.ErrStatus.Details.Group != "clickhouse.altinity.com" {
+					se.ErrStatus.Details.Group != "clickhouse.altinity.com" {
 					return err
 				}
 			}
