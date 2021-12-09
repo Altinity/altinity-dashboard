@@ -134,7 +134,7 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 	list := make([]Chi, 0, len(chis.Items))
 	for _, chi := range chis.Items {
 		chClusterPods := make([]CHClusterPod, 0)
-		_ = chi.WalkClusters(func(cluster *chopv1.ChiCluster) error {
+		errs := chi.WalkClusters(func(cluster *chopv1.ChiCluster) error {
 			sel := &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"clickhouse.altinity.com/chi":     chi.Name,
@@ -142,10 +142,15 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 				},
 				MatchExpressions: nil,
 			}
-			var pods *v1.PodList
-			pods, err = getK8sPodsFromLabelSelector(chi.Namespace, sel)
+			var kubePods *v1.PodList
+			kubePods, err = getK8sPodsFromLabelSelector(chi.Namespace, sel)
 			if err == nil {
-				for _, pod := range getPodsFromK8sPods(pods) {
+				var pods []Pod
+				pods, err = getPodsFromK8sPods(kubePods)
+				if err != nil {
+					return err
+				}
+				for _, pod := range pods {
 					chClusterPod := CHClusterPod{
 						Pod:         pod,
 						ClusterName: cluster.Name,
@@ -155,6 +160,12 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 			}
 			return nil
 		})
+		for _, werr := range errs {
+			if werr != nil {
+				webError(response, http.StatusInternalServerError, werr)
+				return
+			}
+		}
 		var externalURL string
 		var services *v1.ServiceList
 		services, err = getK8sServicesFromLabelSelector(namespace, &metav1.LabelSelector{

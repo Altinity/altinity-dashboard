@@ -48,12 +48,12 @@ export class ExpandableTable extends React.Component<
       }
     }
     return (
-      <TableComposable variant={this.props.table_variant}>
+      <TableComposable variant={this.props.table_variant} className="table-no-extra-padding">
         <Thead>
           <Tr>
             {
               this.props.expanded_content ?
-                <Th key={`${this.props.keyPrefix}-header-col-0`} /> :
+                <Th key={`${this.props.keyPrefix}-header-col-0`}/> :
                 null
             }
             {
@@ -72,7 +72,7 @@ export class ExpandableTable extends React.Component<
                 <Tr key={`${this.props.keyPrefix}-row-${rowIndex}`}>
                   {
                     this.props.expanded_content ?
-                      <Td key={`${this.props.keyPrefix}-row-${rowIndex}-col-0`} noPadding={true} expand={{
+                      <Td key={`${this.props.keyPrefix}-row-${rowIndex}-col-0`}expand={{
                         rowIndex: dataIndex,
                         isExpanded: this.getExpanded(dataIndex),
                         onToggle: this.handleExpansionToggle,
@@ -81,8 +81,7 @@ export class ExpandableTable extends React.Component<
                   }
                   {
                     this.props.columns.map((column, columnIndex) => (
-                      <Td key={`${this.props.keyPrefix}-row-${rowIndex}-col-${columnIndex+1}`}
-                          dataLabel={column}>
+                      <Td key={`${this.props.keyPrefix}-row-${rowIndex}-col-${columnIndex+1}`} dataLabel={column}>
                         {
                           this.props.data_modifier ?
                             this.props.data_modifier(dataItem, this.props.column_fields[columnIndex]) :
@@ -95,10 +94,11 @@ export class ExpandableTable extends React.Component<
                 </Tr>
                 {
                   this.props.expanded_content ? (
-                    <Tr key={`${this.props.keyPrefix}-row-${rowIndex + 1}`} isExpanded={this.getExpanded(dataIndex)}>
+                    <Tr key={`${this.props.keyPrefix}-row-${rowIndex + 1}`}
+                        isExpanded={this.getExpanded(dataIndex)}>
                       <Td />
                       <Td key={`${this.props.keyPrefix}-row-${rowIndex + 1}-col-0`}
-                          colSpan={this.props.columns.length + 1} noPadding={true}>
+                          colSpan={this.props.columns.length + 1}>
                         <ExpandableRowContent>
                           {this.props.expanded_content(dataItem)}
                         </ExpandableRowContent>

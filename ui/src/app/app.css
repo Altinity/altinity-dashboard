@@ -4,3 +4,7 @@ html, body, #root {
 .wide-context-selector .pf-c-context-selector {
   --pf-c-context-selector--Width: 30rem
 }
+.table-no-extra-padding {
+  --pf-c-table--nested--first-last-child--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-table--nested--first-last-child--PaddingLeft: var(--pf-global--spacer--md);
+}

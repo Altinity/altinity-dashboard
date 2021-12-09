@@ -5,15 +5,33 @@ type Namespace struct {
 }
 
 type Pod struct {
-	Name       string      `json:"name" description:"name of the pod"`
-	Status     string      `json:"status" description:"status of the pod"`
-	Containers []Container `json:"containers" description:"containers in the pod"`
+	Name       string                  `json:"name" description:"name of the pod"`
+	Status     string                  `json:"status" description:"status of the pod"`
+	Containers []Container             `json:"containers" description:"containers in the pod"`
+	PVCs       []PersistentVolumeClaim `json:"pvcs" description:"persistent volume claims of this pod"`
 }
 
 type Container struct {
 	Name  string `json:"name" description:"name of the container"`
 	State string `json:"state" description:"status of the container"`
 	Image string `json:"image" description:"image used by the container"`
+}
+
+type PersistentVolume struct {
+	Name          string `json:"name" description:"name of the PV"`
+	Phase         string `json:"phase" description:"status of the PV"`
+	StorageClass  string `json:"storage_class" description:"storage class name of the PV"`
+	Capacity      int64  `json:"capacity" description:"capacity of the PV"`
+	ReclaimPolicy string `json:"reclaim_policy" description:"reclaim policy of the PV"`
+}
+
+type PersistentVolumeClaim struct {
+	Name         string            `json:"name" description:"name of the PVC"`
+	Namespace    string            `json:"namespace" description:"namespace the PVC is in"`
+	Phase        string            `json:"phase" description:"phase of the PVC"`
+	StorageClass string            `json:"storage_class" description:"requested storage class name of the PVC"`
+	Capacity     int64             `json:"capacity" description:"requested capacity of the PVC"`
+	BoundPV      *PersistentVolume `json:"bound_pv,omitempty" description:"PV bound to this PVC"`
 }
 
 type Operator struct {

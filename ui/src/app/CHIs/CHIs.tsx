@@ -5,7 +5,7 @@ import {
   ButtonVariant,
   PageSection,
   Split,
-  SplitItem,
+  SplitItem, Tab, Tabs, TabTitleText,
   Title
 } from '@patternfly/react-core';
 import { AppRoutesProps } from '@app/routes';
@@ -15,7 +15,7 @@ import { SimpleModal } from '@app/Components/SimpleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { CHIModal } from '@app/CHIs/CHIModal';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
-import { CHI } from '@app/CHIs/model';
+import { CHI, FlattenedPVC, PersistentVolumeClaim } from '@app/CHIs/model';
 
 export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [CHIs, setCHIs] = useState(new Array<CHI>())
@@ -23,6 +23,7 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [activeItem, setActiveItem] = useState<CHI|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
+  const [activeTabKey, setActiveTabKey] = useState<string|number>(0)
   const addAlert = props.addAlert
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/chis`, 'GET',
@@ -76,6 +77,30 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
   const retrieveErrorPane = retrieveError === undefined ? null : (
     <Alert variant="danger" title={retrieveError} isInline/>
   )
+  const handleTabClick = (event: React.MouseEvent<HTMLElement, MouseEvent>, eventKey: string|number) => {
+    setActiveTabKey(eventKey)
+  };
+  const flattenPVCs = (pvcs: Array<PersistentVolumeClaim>): Array<FlattenedPVC> => {
+    const results = new Array<FlattenedPVC>()
+    for (const pvc of pvcs) {
+      const fpvc: FlattenedPVC = {
+        name: pvc.name,
+        namespace: pvc.namespace,
+        phase: pvc.phase,
+        capacity: pvc.capacity,
+        storage_class: pvc.storage_class,
+      }
+      if (pvc.bound_pv) {
+        fpvc.pv_name = pvc.bound_pv.name
+        fpvc.phase = pvc.bound_pv.phase
+        fpvc.capacity = pvc.bound_pv.capacity
+        fpvc.storage_class = pvc.bound_pv.storage_class
+        fpvc.reclaim_policy = pvc.bound_pv.reclaim_policy
+      }
+      results.push(fpvc)
+    }
+    return results
+  }
   return (
     <PageSection>
       <SimpleModal
@@ -150,13 +175,26 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
             columns={['Cluster', 'Pod', 'Status']}
             column_fields={['cluster_name', 'name', 'status']}
             expanded_content={(data) => (
-              <ExpandableTable
-                table_variant="compact"
-                keyPrefix="operator-containers"
-                data={data.containers}
-                columns={['Container', 'State', 'Image']}
-                column_fields={['name', 'state', 'image']}
-              />
+              <Tabs activeKey={activeTabKey} onSelect={handleTabClick}>
+                <Tab eventKey={0} title={<TabTitleText>Containers</TabTitleText>}>
+                  <ExpandableTable
+                    table_variant="compact"
+                    keyPrefix="operator-containers"
+                    data={data.containers}
+                    columns={['Container', 'State', 'Image']}
+                    column_fields={['name', 'state', 'image']}
+                  />
+                </Tab>
+                <Tab eventKey={1} title={<TabTitleText>Storage</TabTitleText>}>
+                  <ExpandableTable
+                    table_variant="compact"
+                    keyPrefix="operator-pvcs"
+                    data={flattenPVCs(data.pvcs)}
+                    columns={['PVC Name', 'Phase', 'PV Name', 'Capacity', 'Class', 'Reclaim Policy']}
+                    column_fields={['name', 'phase', 'pv_name', 'capacity', 'storage_class', 'reclaim_policy']}
+                  />
+                </Tab>
+              </Tabs>
             )}
           />
         )}
