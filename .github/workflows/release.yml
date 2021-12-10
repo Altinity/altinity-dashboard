@@ -49,7 +49,7 @@ jobs:
             bin/*
 
       - name: Bump the package.json version number
-        run: (cd ui && npm version patch)
+        run: cd ui && npm version patch
 
       - name: Commit the new version number
         - uses: EndBug/add-and-commit@v7
