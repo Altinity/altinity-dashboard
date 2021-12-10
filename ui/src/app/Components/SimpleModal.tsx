@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Button, ButtonVariant, ModalVariant } from '@patternfly/react-core';
 
-export class SimpleModal extends React.Component<
+export const SimpleModal: React.FunctionComponent<
   {
     title: string
     actionButtonText: string
@@ -11,53 +11,35 @@ export class SimpleModal extends React.Component<
     onActionClick?: () => void
     onClose: () => void
     positionTop?: boolean
-  },
-  {
-    actionButtonVariant: ButtonVariant
-    cancelButtonText: string
-  }> {
-  private readonly closeModal: () => void;
-  private readonly actionClick: () => void;
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  constructor(props) {
-    super(props);
-    this.state = {
-      actionButtonVariant: this.props.actionButtonVariant ? this.props.actionButtonVariant : ButtonVariant.primary,
-      cancelButtonText: this.props.cancelButtonText ? this.props.cancelButtonText : "Cancel"
-    };
-    this.closeModal = () => {
-      this.props.onClose()
-    };
-    this.actionClick = () => {
-      this.closeModal()
-      if (this.props.onActionClick) {
-        this.props.onActionClick()
-      }
-    };
+  }> = (props) => {
+  const actionButtonVariant = props.actionButtonVariant ? props.actionButtonVariant : ButtonVariant.primary
+  const cancelButtonText = props.cancelButtonText ? props.cancelButtonText : "Cancel"
+  const closeModal = () => {
+    props.onClose()
   }
-
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  render() {
-    return (
-      <React.Fragment>
-        <Modal
-          variant={ModalVariant.small}
-          position={this.props.positionTop ? "top" : undefined}
-          title={this.props.title}
-          isOpen={this.props.isModalOpen}
-          onClose={this.closeModal}
-          actions={[
-            <Button key="confirm" variant={this.state.actionButtonVariant} onClick={this.actionClick}>
-              {this.props.actionButtonText}
-            </Button>,
-            <Button key="cancel" variant="link" onClick={this.closeModal}>
-              {this.state.cancelButtonText}
-            </Button>
-          ]}
-        >
-          {this.props.children}
-        </Modal>
-      </React.Fragment>
-    );
+  const actionClick = () => {
+    closeModal()
+    if (props.onActionClick) {
+      props.onActionClick()
+    }
   }
+  return (
+    <Modal
+      variant={ModalVariant.small}
+      position={props.positionTop ? "top" : undefined}
+      title={props.title}
+      isOpen={props.isModalOpen}
+      onClose={closeModal}
+      actions={[
+        <Button key="confirm" variant={actionButtonVariant} onClick={actionClick}>
+          {props.actionButtonText}
+        </Button>,
+        <Button key="cancel" variant="link" onClick={closeModal}>
+          {cancelButtonText}
+        </Button>
+      ]}
+    >
+      {props.children}
+    </Modal>
+  )
 }
