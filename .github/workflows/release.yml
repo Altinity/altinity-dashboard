@@ -30,15 +30,15 @@ jobs:
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
-      - name: Build adash platform binaries
-        run: make bin
-
       - name: Make sure tag version matches package.json
         run: |
-          if [ $(git tag) 1= v$(cd ui && node print-version.js) ]; then
+          if [ $(git tag) != v$(cd ui && node print-version.js) ]; then
             echo "::error file=ui/package.json::Tag does not match package.json version"
             exit 1
           fi
+
+      - name: Build adash platform binaries
+        run: make bin
 
       - name: Create the release
         uses: "marvinpinto/action-automatic-releases@latest"
@@ -57,4 +57,5 @@ jobs:
           message: 'Automatic version number bump after release'
           pathspec_error_handling: exitAtEnd
           pull: 'NO-PULL'
+          branch: main
 
