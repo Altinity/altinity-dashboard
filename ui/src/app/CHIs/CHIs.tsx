@@ -179,8 +179,7 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
                   />
                 </Tab>
                 <Tab eventKey={1} title={<TabTitleText>Storage</TabTitleText>}>
-                  {/*<TableComposable variant={TableVariant.compact} className="table-no-extra-padding">*/}
-                  <TableComposable className="table-no-extra-padding">
+                  <TableComposable variant={TableVariant.compact} className="table-no-extra-padding">
                     <Thead>
                       <Tr>
                         <Th key={`storage-pvc-header-col-1`}>PVC Name</Th>
