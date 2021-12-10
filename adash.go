@@ -28,6 +28,10 @@ import (
 	"time"
 )
 
+// App version info
+var appVersion string
+var chopRelease string
+
 // UI embedded files
 //go:embed ui/dist
 var uiFiles embed.FS
@@ -77,8 +81,6 @@ func main() {
 	}
 
 	// Read version info from embed files
-	var appVersion string
-	var chopRelease string
 	err = utils.ReadFilesToStrings(&embedFiles, []utils.FileToString{
 		{Filename: "embed/version", Dest: &appVersion},
 		{Filename: "embed/chop-release", Dest: &chopRelease},
@@ -301,7 +303,7 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 					URL:  "https://www.apache.org/licenses/LICENSE-2.0",
 				},
 			},
-			Version: "0.1.0",
+			Version: appVersion,
 		},
 	}
 }
