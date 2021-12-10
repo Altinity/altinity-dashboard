@@ -8,3 +8,6 @@ html, body, #root {
   --pf-c-table--nested--first-last-child--PaddingRight: var(--pf-global--spacer--md);
   --pf-c-table--nested--first-last-child--PaddingLeft: var(--pf-global--spacer--md);
 }
+.padded-bullseye {
+  --pf-l-bullseye--Padding: 1rem;
+}

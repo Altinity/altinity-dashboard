@@ -7,7 +7,8 @@ import {
   DescriptionList, DescriptionListDescription, DescriptionListGroup, DescriptionListTerm,
   Grid,
   GridItem,
-  PageSection
+  PageSection,
+  TextContent, Text, TextVariants
 } from '@patternfly/react-core';
 import { AppRoutesProps } from '@app/routes';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
@@ -139,6 +140,13 @@ export const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
           </Card>
         </GridItem>
       </Grid>
+      <TextContent>
+        <Bullseye className="padded-bullseye">
+          <Text component={TextVariants.small}>
+            Altinity and the Altinity logos are trademarks of Altinity, Inc.&nbsp;&nbsp;&nbsp;ClickHouse and the ClickHouse logos are trademarks of ClickHouse, Inc.
+          </Text>
+        </Bullseye>
+      </TextContent>
     </PageSection>
   )
 }
