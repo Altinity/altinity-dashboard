@@ -21,16 +21,6 @@ export interface PersistentVolumeClaim {
   bound_pv: PersistentVolume|undefined
 }
 
-export interface FlattenedPVC {
-  name: string
-  namespace: string
-  pv_name?: string
-  phase: string
-  storage_class: string
-  capacity: number
-  reclaim_policy?: string
-}
-
 export interface CHClusterPod {
   cluster_name: string
   name: string

@@ -72,7 +72,7 @@ export class ExpandableTable extends React.Component<
                 <Tr key={`${this.props.keyPrefix}-row-${rowIndex}`}>
                   {
                     this.props.expanded_content ?
-                      <Td key={`${this.props.keyPrefix}-row-${rowIndex}-col-0`}expand={{
+                      <Td key={`${this.props.keyPrefix}-row-${rowIndex}-col-0`} expand={{
                         rowIndex: dataIndex,
                         isExpanded: this.getExpanded(dataIndex),
                         onToggle: this.handleExpansionToggle,

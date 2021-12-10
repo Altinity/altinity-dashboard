@@ -1,21 +1,26 @@
 import * as React from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import {
   Alert,
   AlertVariant,
   ButtonVariant,
   PageSection,
   Split,
-  SplitItem, Tab, Tabs, TabTitleText,
+  SplitItem,
+  Tab,
+  Tabs,
+  TabTitleText,
   Title
 } from '@patternfly/react-core';
 import { AppRoutesProps } from '@app/routes';
-import { ReactElement, useEffect, useState } from 'react';
 import { ToggleModal } from '@app/Components/ToggleModal';
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { CHIModal } from '@app/CHIs/CHIModal';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
-import { CHI, FlattenedPVC, PersistentVolumeClaim } from '@app/CHIs/model';
+import { CHI } from '@app/CHIs/model';
+import { ExpandableRowContent, TableComposable, TableVariant, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { humanFileSize } from '@app/utils/humanFileSize';
 
 export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [CHIs, setCHIs] = useState(new Array<CHI>())
@@ -23,7 +28,7 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [activeItem, setActiveItem] = useState<CHI|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
-  const [activeTabKey, setActiveTabKey] = useState<string|number>(0)
+  const [activeTabKeys, setActiveTabKeys] = useState<Map<string,string|number>>(new Map())
   const addAlert = props.addAlert
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/chis`, 'GET',
@@ -77,29 +82,13 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
   const retrieveErrorPane = retrieveError === undefined ? null : (
     <Alert variant="danger" title={retrieveError} isInline/>
   )
-  const handleTabClick = (event: React.MouseEvent<HTMLElement, MouseEvent>, eventKey: string|number) => {
-    setActiveTabKey(eventKey)
-  };
-  const flattenPVCs = (pvcs: Array<PersistentVolumeClaim>): Array<FlattenedPVC> => {
-    const results = new Array<FlattenedPVC>()
-    for (const pvc of pvcs) {
-      const fpvc: FlattenedPVC = {
-        name: pvc.name,
-        namespace: pvc.namespace,
-        phase: pvc.phase,
-        capacity: pvc.capacity,
-        storage_class: pvc.storage_class,
-      }
-      if (pvc.bound_pv) {
-        fpvc.pv_name = pvc.bound_pv.name
-        fpvc.phase = pvc.bound_pv.phase
-        fpvc.capacity = pvc.bound_pv.capacity
-        fpvc.storage_class = pvc.bound_pv.storage_class
-        fpvc.reclaim_policy = pvc.bound_pv.reclaim_policy
-      }
-      results.push(fpvc)
+  const getActiveTabKey = (key: string) => {
+    const result = activeTabKeys.get(key)
+    if (result) {
+      return result
+    } else {
+      return 0
     }
-    return results
   }
   return (
     <PageSection>
@@ -175,7 +164,11 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
             columns={['Cluster', 'Pod', 'Status']}
             column_fields={['cluster_name', 'name', 'status']}
             expanded_content={(data) => (
-              <Tabs activeKey={activeTabKey} onSelect={handleTabClick}>
+              <Tabs activeKey={getActiveTabKey(data.name)} onSelect={
+                (event: React.MouseEvent<HTMLElement, MouseEvent>, eventKey: string|number) => {
+                  setActiveTabKeys(new Map(activeTabKeys.set(data.name, eventKey)))
+                }
+              }>
                 <Tab eventKey={0} title={<TabTitleText>Containers</TabTitleText>}>
                   <ExpandableTable
                     table_variant="compact"
@@ -186,13 +179,55 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
                   />
                 </Tab>
                 <Tab eventKey={1} title={<TabTitleText>Storage</TabTitleText>}>
-                  <ExpandableTable
-                    table_variant="compact"
-                    keyPrefix="operator-pvcs"
-                    data={flattenPVCs(data.pvcs)}
-                    columns={['PVC Name', 'Phase', 'PV Name', 'Capacity', 'Class', 'Reclaim Policy']}
-                    column_fields={['name', 'phase', 'pv_name', 'capacity', 'storage_class', 'reclaim_policy']}
-                  />
+                  {/*<TableComposable variant={TableVariant.compact} className="table-no-extra-padding">*/}
+                  <TableComposable className="table-no-extra-padding">
+                    <Thead>
+                      <Tr>
+                        <Th key={`storage-pvc-header-col-1`}>PVC Name</Th>
+                        <Th key={`storage-pvc-header-col-2`}>Phase</Th>
+                        <Th key={`storage-pvc-header-col-3`}>Capacity</Th>
+                        <Th key={`storage-pvc-header-col-4`}>Class</Th>
+                      </Tr>
+                    </Thead>
+                    {
+                      data.pvcs.map((dataItem, dataIndex) => (
+                        <Tbody key={dataIndex}>
+                          <Tr key={`storage-pvc-${dataIndex}`} isExpanded={dataItem.bound_pv !== undefined}>
+                            <Td key={`storage-pvc-${dataIndex}-col-1`}>{dataItem.name}</Td>
+                            <Td key={`storage-pvc-${dataIndex}-col-2`}>{dataItem.phase}</Td>
+                            <Td key={`storage-pvc-${dataIndex}-col-3`}>{humanFileSize(dataItem.capacity)}</Td>
+                            <Td key={`storage-pvc-${dataIndex}-col-4`}>{dataItem.storage_class}</Td>
+                          </Tr>
+                          <Tr key={`storage-pv-${dataIndex}`}>
+                            <Td colSpan={4} noPadding={true}>
+                              <ExpandableRowContent>
+                                <TableComposable variant={TableVariant.compact} borders={false} isNested={true}>
+                                  <Thead noWrap={true}>
+                                    <Tr>
+                                      <Th key={`storage-pv-hdr-col-1`}>PV Name</Th>
+                                      <Th key={`storage-pv-hdr-col-2`}>Phase</Th>
+                                      <Th key={`storage-pv-hdr-col-3`}>Capacity</Th>
+                                      <Th key={`storage-pv-hdr-col-4`}>Class</Th>
+                                      <Th key={`storage-pv-hdr-col-5`}>Reclaim Policy</Th>
+                                    </Tr>
+                                  </Thead>
+                                  <Tbody>
+                                    <Tr>
+                                      <Th key={`storage-pv-${dataIndex}-col-1`}>{dataItem.bound_pv?.name}</Th>
+                                      <Th key={`storage-pv-${dataIndex}-col-2`}>{dataItem.bound_pv?.phase}</Th>
+                                      <Th key={`storage-pv-${dataIndex}-col-3`}>{humanFileSize(dataItem.bound_pv?.capacity)}</Th>
+                                      <Th key={`storage-pv-${dataIndex}-col-4`}>{dataItem.bound_pv?.storage_class}</Th>
+                                      <Th key={`storage-pv-${dataIndex}-col-5`}>{dataItem.bound_pv?.reclaim_policy}</Th>
+                                    </Tr>
+                                  </Tbody>
+                                </TableComposable>
+                              </ExpandableRowContent>
+                            </Td>
+                          </Tr>
+                        </Tbody>
+                      ))
+                    }
+                  </TableComposable>
                 </Tab>
               </Tabs>
             )}
