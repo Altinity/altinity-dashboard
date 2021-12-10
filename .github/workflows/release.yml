@@ -81,6 +81,7 @@ jobs:
         with:
           commit-message: 'Automatic version number bump after release'
           title: 'Automatic version number bump after release'
-          branch: main
+          base: main
+          branch: version_update
           delete-branch: true
 
