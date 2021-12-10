@@ -49,11 +49,12 @@ jobs:
             bin/*
 
       - name: Bump the package.json version number
-        run: cd ui && npm version patch
+        run: (cd ui && npm version patch)
 
       - name: Commit the new version number
-        - uses: EndBug/add-and-commit@v7
-          with:
-            message: 'Automatic version number bump after release'
-            pathspec_error_handling: exitAtEnd
-            pull: 'NO-PULL'
+        uses: EndBug/add-and-commit@v7
+        with:
+          message: 'Automatic version number bump after release'
+          pathspec_error_handling: exitAtEnd
+          pull: 'NO-PULL'
+
