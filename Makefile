@@ -17,8 +17,8 @@ bin: adash
 	GOOS=linux GOARCH=amd64 go build -o bin/adash-linux-x86_64 adash.go
 	GOOS=linux GOARCH=arm64 go build -o bin/adash-linux-arm64 adash.go
 	GOOS=windows GOARCH=amd64 go build -o bin/adash-windows-x86_64.exe adash.go
-	GOOS=darwin GOARCH=amd64 go build -o bin/adash-macos-x86_64.app adash.go
-	GOOS=darwin GOARCH=arm64 go build -o bin/adash-macos-arm64.app adash.go
+	GOOS=darwin GOARCH=amd64 go build -o bin/adash-macos-x86_64 adash.go
+	GOOS=darwin GOARCH=arm64 go build -o bin/adash-macos-arm64 adash.go
 	@touch bin
 
 ui: ui/dist
