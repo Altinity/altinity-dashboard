@@ -40,6 +40,9 @@ jobs:
       - name: Build adash platform binaries
         run: make bin
 
+      - name: Build container image
+        run: docker build . -t altinity-dashboard:latest -t altinity-dashboard:$(cd ui && node print-version.js)
+
       - name: Create the release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
@@ -48,14 +51,35 @@ jobs:
           files: |
             bin/*
 
+      - name: Log in to GitHub registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for container image
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ghcr.io/altinity/altinity-dashboard
+
+      - name: Push to GitHub registry
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
       - name: Bump the package.json version number
         run: (cd ui && npm version patch)
 
-      - name: Commit the new version number
-        uses: EndBug/add-and-commit@v7
+      - name: Create pull request bumping the version number
+        uses: peter-evans/create-pull-request@v3
         with:
-          message: 'Automatic version number bump after release'
-          pathspec_error_handling: exitAtEnd
-          pull: 'NO-PULL'
+          commit-message: 'Automatic version number bump after release'
+          title: 'Automatic version number bump after release'
           branch: main
+          delete-branch: true
 
