@@ -2,9 +2,24 @@
 
 This is a preliminary version of the Altinity Dashboard.  It is used for viewing and managing Kubernetes-based ClickHouse installations controlled by [clickhouse-operator](https://github.com/altinity/clickhouse-operator).
 
+### How To Use
+
+* First, make sure you have a valid kubeconfig pointing to the Kubernetes cluster you want to work with.
+
+* Linux / Mac:
+  * Download the appropriate file for your platform from https://github.com/Altinity/altinity-dashboard/releases.
+  * `chmod a+x adash-linux-*`
+  * `./adash-linux-* --openbrowser`
+
+* Windows:
+  * Download and double-click on the Windows EXE file from https://github.com/Altinity/altinity-dashboard/releases.
+  * A command prompt window will open and will show a URL.
+  * Copy and paste the URL into a web browser.
+  * Windows SmartScreen Filter may warn that the EXE file is rarely downloaded.  You can ignore this.
+
 ### Running the container image from the GitHub Container Registry
 
-There are no stable releases of this yet.  The most recent successful commit to the main branch is built as a container image and stored on the GitHub Container Registry.  To use this:
+Container images are available on the GitHub Container Registry.  To use this:
 
 * Create a GitHub Personal Access Token with at least read:packages access.
 * Run `docker login ghcr.io` and log in using your username and PAT.
