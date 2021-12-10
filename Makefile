@@ -7,8 +7,19 @@ LIST_FILES_CMD_PREFIX := find
 LIST_FILES_CMD_SUFFIX := -type f
 endif
 
+export CGO_ENABLED := 0
+
 adash: adash.go ui/dist embed $(shell $(LIST_FILES_CMD_PREFIX) internal $(LIST_FILES_CMD_SUFFIX))
-	@CGO_ENABLED=0 go build adash.go
+	go build adash.go
+
+bin: adash
+	@mkdir -p bin
+	GOOS=linux GOARCH=amd64 go build -o bin/adash-linux-x86_64 adash.go
+	GOOS=linux GOARCH=arm64 go build -o bin/adash-linux-arm64 adash.go
+	GOOS=windows GOARCH=amd64 go build -o bin/adash-windows-x86_64.exe adash.go
+	GOOS=darwin GOARCH=amd64 go build -o bin/adash-macos-x86_64.app adash.go
+	GOOS=darwin GOARCH=arm64 go build -o bin/adash-macos-arm64.app adash.go
+	@touch bin
 
 ui: ui/dist
 
@@ -43,6 +54,6 @@ format:
 	@go fmt ./...
 
 clean:
-	@rm -rf adash internal/dev_server/swagger-ui-dist ui/dist embed
+	@rm -rf adash internal/dev_server/swagger-ui-dist ui/dist embed bin
 
 .PHONY: ui ui-devel lint format clean
