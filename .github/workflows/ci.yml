@@ -54,6 +54,9 @@ jobs:
       - name: Build adash
         run: make adash
 
+      - name: Build platform binaries
+        run: make bin
+
       - name: Build container image
         run: docker build . -t altinity-dashboard:latest
 
