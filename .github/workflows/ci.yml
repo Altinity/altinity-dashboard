@@ -51,9 +51,6 @@ jobs:
       - name: Check node modules security
         run: cd ui && npm audit --audit-level moderate
 
-      - name: Build adash
-        run: make adash
-
       - name: Build platform binaries (to make sure it works)
         run: make bin
 
