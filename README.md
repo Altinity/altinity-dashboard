@@ -23,8 +23,8 @@ Container images are available on the GitHub Container Registry.  To use this:
 
 * Create a GitHub Personal Access Token with at least read:packages access.
 * Run `docker login ghcr.io` and log in using your username and PAT.
-* Run `docker pull ghcr.io/altinity/altinity-dashboard:main` to get the latest development build of the container.
-* Run `docker run -it --rm ghcr.io/altinity/altinity-dashboard:main adash --help`.  If everything is working, you should see command-line help.
+* Run `docker pull ghcr.io/altinity/altinity-dashboard:latest` to get the latest development build of the container.
+* Run `docker run -it --rm ghcr.io/altinity/altinity-dashboard:latest adash --help`.  If everything is working, you should see command-line help.
 * If you run this container inside Kubernetes, it should perform in-cluster auth.
 * To run it outside Kubernetes, you will need to volume mount a kubeconfig file and use `-kubeconfig` to point to it.
 
