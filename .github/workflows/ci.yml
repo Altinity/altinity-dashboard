@@ -33,16 +33,6 @@ jobs:
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
-      - name: Cache Go packages and build cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Build the embed files
         run: make embed
 
