@@ -9,14 +9,14 @@ import {
   Title
 } from '@patternfly/react-core';
 import { SimpleModal } from '@app/Components/SimpleModal';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
-import { AppRoutesProps } from '@app/routes';
 import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewOperatorModal } from '@app/Operators/NewOperatorModal';
 import { Loading } from '@app/Components/Loading';
 import { usePageVisibility } from 'react-page-visibility';
+import { AddAlertType } from '@app/index';
 
 interface Container {
   name: string
@@ -39,7 +39,7 @@ interface Operator {
   pods: Array<OperatorPod>
 }
 
-export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
+export const Operators: React.FunctionComponent = () => {
   const [operators, setOperators] = useState(new Array<Operator>())
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
@@ -49,7 +49,8 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
   const mounted = useRef(false)
   const pageVisible = useRef(true)
   pageVisible.current = usePageVisibility()
-  const addAlert = props.addAlert
+  const AddAlertContext = React.createContext<AddAlertType>(() => {return undefined})
+  const addAlert = useContext(AddAlertContext)
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/operators`, 'GET',
       undefined,
@@ -76,14 +77,14 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
       })
   }
   useEffect(() => {
-      mounted.current = true
-      fetchData()
-      return () => {
-        mounted.current = false
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [])
+    mounted.current = true
+    fetchData()
+    return () => {
+      mounted.current = false
+    }
+  },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [])
   const onDeleteClick = (item: Operator) => {
     setActiveItem(item)
     setIsDeleteModalOpen(true)
@@ -131,7 +132,6 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
         The operator will be removed from the <b>{activeItem ? activeItem.namespace : "UNKNOWN"}</b> namespace.
       </SimpleModal>
       <NewOperatorModal
-       addAlert={props.addAlert}
        closeModal={closeUpgradeModal}
        isModalOpen={isUpgradeModalOpen}
        isUpgrade={true}
@@ -145,10 +145,8 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
         </SplitItem>
         <SplitItem>
           <ToggleModal
-            addAlert={addAlert}
             modal={(props: ToggleModalSubProps) => {
               return NewOperatorModal({
-                addAlert: props.addAlert,
                 isModalOpen: props.isModalOpen,
                 closeModal: props.closeModal,
                 isUpgrade: false

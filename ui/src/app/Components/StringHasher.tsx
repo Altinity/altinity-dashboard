@@ -27,13 +27,11 @@ export const StringHasher: React.FunctionComponent<{
     const jh = new jsSHA('SHA-256', 'TEXT')
     jh.update(value)
     const hash = jh.getHash("HEX")
-    console.log("hashed " + value + " to " + hash)
     setHashValue(hash)
   }
   return (
     <React.Fragment>
       <ToggleModal
-        addAlert={() => {return}}
         buttonVariant={ButtonVariant.link}
         buttonText={title}
         buttonInline={true}

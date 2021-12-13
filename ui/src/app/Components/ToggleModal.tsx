@@ -1,10 +1,9 @@
 import * as React from 'react';
 import { Button, ButtonVariant } from '@patternfly/react-core';
-import { AppRoutesProps } from '@app/routes';
 import { useState } from 'react';
 
 // ToggleModalProps are the properties of the ToggleModal component
-export interface ToggleModalProps extends AppRoutesProps {
+export interface ToggleModalProps {
   modal: React.FunctionComponent<ToggleModalSubProps>
   onToggle?: (open: boolean) => void
   buttonText?: string
@@ -13,7 +12,7 @@ export interface ToggleModalProps extends AppRoutesProps {
 }
 
 // ToggleModalSubProps are the properties of the Modal within the ToggleModal component
-export interface ToggleModalSubProps extends AppRoutesProps {
+export interface ToggleModalSubProps {
   isModalOpen: boolean
   closeModal: () => void
 }
@@ -35,7 +34,6 @@ export const ToggleModal: React.FunctionComponent<ToggleModalProps> = (props: To
         {props.buttonText ? props.buttonText : "+"}
       </Button>
       {props.modal({
-        addAlert: props.addAlert,
         isModalOpen: isModalOpen,
         closeModal: () => { handleStateChange(false) },
       })}

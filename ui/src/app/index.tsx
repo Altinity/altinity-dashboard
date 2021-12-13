@@ -20,29 +20,32 @@ const App: React.FunctionComponent = () => {
   const addAlert: AddAlertType = (title: string, variant: AlertVariant): void => {
     setAlerts([...alerts, {title: title, variant: variant, key: new Date().getTime()}])
   }
+  const AddAlertContext = React.createContext<AddAlertType>(() => {return undefined})
   const removeAlert = (key: number): void => {
     setAlerts([...alerts.filter(a => a.key !== key)])
   }
   return (
     <Router>
-      <AppLayout>
-        <AlertGroup isToast isLiveRegion>
-          {alerts.map(({ key, variant, title }) => (
-            <Alert
-              variant={AlertVariant[variant]}
-              title={title}
-              actionClose={
-                <AlertActionCloseButton
-                  title={title}
-                  variantLabel={`${variant} alert`}
-                  onClose={() => removeAlert(key)}
-                />
-              }
-              key={key} />
-          ))}
-        </AlertGroup>
-        <AppRoutes addAlert={addAlert} />
-      </AppLayout>
+      <AddAlertContext.Provider value={addAlert}>
+        <AppLayout>
+          <AlertGroup isToast isLiveRegion>
+            {alerts.map(({ key, variant, title }) => (
+              <Alert
+                variant={AlertVariant[variant]}
+                title={title}
+                actionClose={
+                  <AlertActionCloseButton
+                    title={title}
+                    variantLabel={`${variant} alert`}
+                    onClose={() => removeAlert(key)}
+                  />
+                }
+                key={key} />
+            ))}
+          </AlertGroup>
+          <AppRoutes/>
+        </AppLayout>
+      </AddAlertContext.Provider>
     </Router>
   )
 }

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ReactElement, useEffect, useRef, useState } from 'react';
+import { ReactElement, useContext, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   AlertVariant,
@@ -12,7 +12,6 @@ import {
   TabTitleText,
   Title
 } from '@patternfly/react-core';
-import { AppRoutesProps } from '@app/routes';
 import { ToggleModal } from '@app/Components/ToggleModal';
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
@@ -23,8 +22,9 @@ import { ExpandableRowContent, TableComposable, TableVariant, Tbody, Td, Th, The
 import { humanFileSize } from '@app/utils/humanFileSize';
 import { Loading } from '@app/Components/Loading';
 import { usePageVisibility } from 'react-page-visibility';
+import { AddAlertType } from '@app/index';
 
-export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
+export const CHIs: React.FunctionComponent = () => {
   const [CHIs, setCHIs] = useState(new Array<CHI>())
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -35,7 +35,8 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
   const mounted = useRef(false)
   const pageVisible = useRef(true)
   pageVisible.current = usePageVisibility()
-  const addAlert = props.addAlert
+  const AddAlertContext = React.createContext<AddAlertType>(() => {return undefined})
+  const addAlert = useContext(AddAlertContext)
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/chis`, 'GET',
       undefined,
@@ -62,14 +63,14 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
       })
   }
   useEffect(() => {
-      mounted.current = true
-      fetchData()
-      return () => {
-        mounted.current = false
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [])
+    mounted.current = true
+    fetchData()
+    return () => {
+      mounted.current = false
+    }
+  },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [])
   const onDeleteClick = (item: CHI) => {
     setActiveItem(item)
     setIsDeleteModalOpen(true)
@@ -124,7 +125,6 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
         be removed from the <b>{activeItem ? activeItem.namespace : "UNKNOWN"}</b> namespace.
       </SimpleModal>
       <CHIModal
-        addAlert={props.addAlert}
         closeModal={closeEditModal}
         isUpdate={true}
         isModalOpen={isEditModalOpen}
@@ -138,7 +138,7 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
           </Title>
         </SplitItem>
         <SplitItem>
-          <ToggleModal modal={CHIModal} addAlert={addAlert}/>
+          <ToggleModal modal={CHIModal}/>
         </SplitItem>
       </Split>
       {isPageLoading ? (

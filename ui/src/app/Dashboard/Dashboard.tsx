@@ -10,7 +10,6 @@ import {
   PageSection,
   TextContent, Text, TextVariants
 } from '@patternfly/react-core';
-import { AppRoutesProps } from '@app/routes';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { useEffect, useRef, useState } from 'react';
 import { ChartDonutUtilization } from '@patternfly/react-charts';
@@ -26,7 +25,7 @@ interface DashboardInfo {
   chi_count_complete: number
 }
 
-export const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
+export const Dashboard: React.FunctionComponent = () => {
   const [dashboardInfo, setDashboardInfo] = useState<DashboardInfo|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const [isPageLoading, setIsPageLoading] = useState(true)
@@ -60,14 +59,14 @@ export const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
       })
   }
   useEffect(() => {
-      mounted.current = true
-      fetchData()
-      return () => {
-        mounted.current = false
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [])
+    mounted.current = true
+    fetchData()
+    return () => {
+      mounted.current = false
+    }
+  },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [])
   const retrieveErrorPane = retrieveError === undefined ? null : (
     <Alert variant="danger" title={retrieveError} isInline/>
   )

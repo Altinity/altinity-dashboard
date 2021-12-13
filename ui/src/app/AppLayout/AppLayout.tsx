@@ -14,16 +14,19 @@ import { routes, IAppRoute, IAppRouteGroup } from '@app/routes';
 import logo from '@app/images/altinity_horizontal_logo.png';
 
 interface IAppLayout {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
-export const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
+export const AppLayout: React.FunctionComponent<IAppLayout> = (props) => {
   const [isNavOpen, setIsNavOpen] = React.useState(true);
+  const [isNavOpenMobile, setIsNavOpenMobile] = React.useState(true);
   const [isMobileView, setIsMobileView] = React.useState(true);
-  const [isNavOpenMobile, setIsNavOpenMobile] = React.useState(false);
   const onNavToggleMobile = () => {
     setIsNavOpenMobile(!isNavOpenMobile);
   };
+  const navMobileClose = () => {
+    setIsNavOpenMobile(false)
+  }
   const onNavToggle = () => {
     setIsNavOpen(!isNavOpen);
   }
@@ -49,7 +52,7 @@ export const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => 
   const location = useLocation();
 
   const renderNavItem = (route: IAppRoute, index: number) => (
-    <NavItem key={`${route.label}-${index}`} id={`${route.label}-${index}`}>
+    <NavItem key={`${route.label}-${index}`} id={`${route.label}-${index}`} onClick={navMobileClose}>
       <NavLink exact={route.exact} to={route.path} activeClassName="pf-m-current">
         {route.label}
       </NavLink>
@@ -102,7 +105,7 @@ export const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => 
       sidebar={Sidebar}
       onPageResize={onPageResize}
       skipToContent={PageSkipToContent}>
-      {children}
+      {props.children}
     </Page>
   );
 }
