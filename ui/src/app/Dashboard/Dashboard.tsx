@@ -12,9 +12,10 @@ import {
 } from '@patternfly/react-core';
 import { AppRoutesProps } from '@app/routes';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChartDonutUtilization } from '@patternfly/react-charts';
 import { Loading } from '@app/Components/Loading';
+import { usePageVisibility } from 'react-page-visibility';
 
 interface DashboardInfo {
   kube_cluster: string
@@ -29,6 +30,9 @@ export const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
   const [dashboardInfo, setDashboardInfo] = useState<DashboardInfo|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const [isPageLoading, setIsPageLoading] = useState(true)
+  const mounted = useRef(false)
+  const pageVisible = useRef(true)
+  pageVisible.current = usePageVisibility()
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/dashboard`, 'GET',
       undefined,
@@ -36,19 +40,30 @@ export const Dashboard: React.FunctionComponent<AppRoutesProps> = () => {
         setRetrieveError(undefined)
         setDashboardInfo(body as DashboardInfo)
         setIsPageLoading(false)
+        return mounted.current ? 2000 : 0
       },
       (response, text, error) => {
         const errorMessage = (error == "") ? text : `${error}: ${text}`
         setRetrieveError(`Error retrieving CHIs: ${errorMessage}`)
         setDashboardInfo(undefined)
         setIsPageLoading(false)
+        return mounted.current ? 10000 : 0
+      },
+      () => {
+        if (!mounted.current) {
+          return -1
+        } else if (!pageVisible.current) {
+          return 2000
+        } else {
+          return 0
+        }
       })
   }
   useEffect(() => {
+      mounted.current = true
       fetchData()
-      const timer = setInterval(() => fetchData(), 2000)
       return () => {
-        clearInterval(timer)
+        mounted.current = false
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

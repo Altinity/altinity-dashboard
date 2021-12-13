@@ -9,13 +9,14 @@ import {
   Title
 } from '@patternfly/react-core';
 import { SimpleModal } from '@app/Components/SimpleModal';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ExpandableTable } from '@app/Components/ExpandableTable';
 import { AppRoutesProps } from '@app/routes';
 import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewOperatorModal } from '@app/Operators/NewOperatorModal';
 import { Loading } from '@app/Components/Loading';
+import { usePageVisibility } from 'react-page-visibility';
 
 interface Container {
   name: string
@@ -45,6 +46,9 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
   const [isPageLoading, setIsPageLoading] = useState(true)
   const [activeItem, setActiveItem] = useState<Operator|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
+  const mounted = useRef(false)
+  const pageVisible = useRef(true)
+  pageVisible.current = usePageVisibility()
   const addAlert = props.addAlert
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/operators`, 'GET',
@@ -53,21 +57,33 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
         setOperators(body as Operator[])
         setRetrieveError(undefined)
         setIsPageLoading(false)
+        return mounted.current ? 2000 : 0
       },
       (response, text, error) => {
         const errorMessage = (error == "") ? text : `${error}: ${text}`
         setRetrieveError(`Error retrieving operators: ${errorMessage}`)
         setIsPageLoading(false)
+        return mounted.current ? 10000 : 0
+      },
+      () => {
+        if (!mounted.current) {
+          return -1
+        } else if (!pageVisible.current) {
+          return 2000
+        } else {
+          return 0
+        }
       })
   }
   useEffect(() => {
-    fetchData()
-    const timer = setInterval(() => fetchData(), 2000)
-    return () => {
-      clearInterval(timer)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+      mounted.current = true
+      fetchData()
+      return () => {
+        mounted.current = false
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [])
   const onDeleteClick = (item: Operator) => {
     setActiveItem(item)
     setIsDeleteModalOpen(true)

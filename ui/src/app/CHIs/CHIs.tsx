@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ReactElement, useEffect, useState } from 'react';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   AlertVariant,
@@ -22,6 +22,7 @@ import { CHI } from '@app/CHIs/model';
 import { ExpandableRowContent, TableComposable, TableVariant, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { humanFileSize } from '@app/utils/humanFileSize';
 import { Loading } from '@app/Components/Loading';
+import { usePageVisibility } from 'react-page-visibility';
 
 export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesProps) => {
   const [CHIs, setCHIs] = useState(new Array<CHI>())
@@ -31,6 +32,9 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
   const [activeItem, setActiveItem] = useState<CHI|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const [activeTabKeys, setActiveTabKeys] = useState<Map<string,string|number>>(new Map())
+  const mounted = useRef(false)
+  const pageVisible = useRef(true)
+  pageVisible.current = usePageVisibility()
   const addAlert = props.addAlert
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/chis`, 'GET',
@@ -39,18 +43,29 @@ export const CHIs: React.FunctionComponent<AppRoutesProps> = (props: AppRoutesPr
         setCHIs(body as CHI[])
         setRetrieveError(undefined)
         setIsPageLoading(false)
+        return mounted.current ? 2000 : 0
       },
       (response, text, error) => {
         const errorMessage = (error == "") ? text : `${error}: ${text}`
         setRetrieveError(`Error retrieving CHIs: ${errorMessage}`)
         setIsPageLoading(false)
+        return mounted.current ? 10000 : 0
+      },
+      () => {
+        if (!mounted.current) {
+          return -1
+        } else if (!pageVisible.current) {
+          return 2000
+        } else {
+          return 0
+        }
       })
   }
   useEffect(() => {
+      mounted.current = true
       fetchData()
-      const timer = setInterval(() => fetchData(), 2000)
       return () => {
-        clearInterval(timer)
+        mounted.current = false
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
