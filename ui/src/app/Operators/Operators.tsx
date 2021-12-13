@@ -15,6 +15,7 @@ import { AppRoutesProps } from '@app/routes';
 import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewOperatorModal } from '@app/Operators/NewOperatorModal';
+import { Loading } from '@app/Components/Loading';
 
 interface Container {
   name: string
@@ -41,6 +42,7 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
   const [operators, setOperators] = useState(new Array<Operator>())
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
+  const [isPageLoading, setIsPageLoading] = useState(true)
   const [activeItem, setActiveItem] = useState<Operator|undefined>(undefined)
   const [retrieveError, setRetrieveError] = useState<string|undefined>(undefined)
   const addAlert = props.addAlert
@@ -50,10 +52,12 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
       (response, body) => {
         setOperators(body as Operator[])
         setRetrieveError(undefined)
+        setIsPageLoading(false)
       },
       (response, text, error) => {
         const errorMessage = (error == "") ? text : `${error}: ${text}`
         setRetrieveError(`Error retrieving operators: ${errorMessage}`)
+        setIsPageLoading(false)
       })
   }
   useEffect(() => {
@@ -137,46 +141,52 @@ export const Operators: React.FunctionComponent<AppRoutesProps> = (props: AppRou
           />
         </SplitItem>
       </Split>
-      {retrieveErrorPane}
-      <ExpandableTable
-        keyPrefix="operators"
-        data={operators}
-        columns={['Name', 'Namespace', 'Conditions', 'Version']}
-        column_fields={['name', 'namespace', 'conditions', 'version']}
-        actions={(item: Operator) => {
-          return {
-            items: [
-              {
-                title: "Upgrade",
-                variant: "primary",
-                onClick: () => {onUpgradeClick(item)}
-              },
-              {
-                title: "Delete",
-                variant: "danger",
-                onClick: () => {onDeleteClick(item)}
-              },
-            ]
-          }
-        }}
-        expanded_content={(data) => (
+      {isPageLoading ? (
+        <Loading variant="table"/>
+      ) : (
+        <React.Fragment>
+          {retrieveErrorPane}
           <ExpandableTable
-            keyPrefix="operator-pods"
-            table_variant="compact"
-            data={data.pods}
-            columns={['Pod', 'Status', 'Version']}
-            column_fields={['name', 'status', 'version']}
+            keyPrefix="operators"
+            data={operators}
+            columns={['Name', 'Namespace', 'Conditions', 'Version']}
+            column_fields={['name', 'namespace', 'conditions', 'version']}
+            actions={(item: Operator) => {
+              return {
+                items: [
+                  {
+                    title: "Upgrade",
+                    variant: "primary",
+                    onClick: () => {onUpgradeClick(item)}
+                  },
+                  {
+                    title: "Delete",
+                    variant: "danger",
+                    onClick: () => {onDeleteClick(item)}
+                  },
+                ]
+              }
+            }}
             expanded_content={(data) => (
-              <ExpandableTable table_variant="compact"
-                keyPrefix="operator-containers"
-                data={data.containers}
-                columns={['Container', 'State', 'Image']}
-                column_fields={['name', 'state', 'image']}
+              <ExpandableTable
+                keyPrefix="operator-pods"
+                table_variant="compact"
+                data={data.pods}
+                columns={['Pod', 'Status', 'Version']}
+                column_fields={['name', 'status', 'version']}
+                expanded_content={(data) => (
+                  <ExpandableTable table_variant="compact"
+                    keyPrefix="operator-containers"
+                    data={data.containers}
+                    columns={['Container', 'State', 'Image']}
+                    column_fields={['name', 'state', 'image']}
+                  />
+                )}
               />
             )}
           />
-        )}
-      />
+        </React.Fragment>
+      )}
     </PageSection>
   )
 }
