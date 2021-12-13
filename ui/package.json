@@ -51,7 +51,7 @@
     "raw-loader": "^4.0.2",
     "react-axe": "^3.5.4",
     "react-docgen-typescript-loader": "^2.2.0",
-    "react-router-dom": "^5.3.0",
+    "react-router-dom": "^6.1.1",
     "regenerator-runtime": "^0.13.7",
     "rimraf": "^3.0.2",
     "style-loader": "^3.3.1",
