@@ -16,7 +16,7 @@ import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewOperatorModal } from '@app/Operators/NewOperatorModal';
 import { Loading } from '@app/Components/Loading';
 import { usePageVisibility } from 'react-page-visibility';
-import { AddAlertType } from '@app/index';
+import { AddAlertContext } from '@app/utils/alertContext';
 
 interface Container {
   name: string
@@ -49,7 +49,6 @@ export const Operators: React.FunctionComponent = () => {
   const mounted = useRef(false)
   const pageVisible = useRef(true)
   pageVisible.current = usePageVisibility()
-  const AddAlertContext = React.createContext<AddAlertType>(() => {return undefined})
   const addAlert = useContext(AddAlertContext)
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/operators`, 'GET',

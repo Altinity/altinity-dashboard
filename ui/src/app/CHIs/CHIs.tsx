@@ -22,7 +22,7 @@ import { ExpandableRowContent, TableComposable, TableVariant, Tbody, Td, Th, The
 import { humanFileSize } from '@app/utils/humanFileSize';
 import { Loading } from '@app/Components/Loading';
 import { usePageVisibility } from 'react-page-visibility';
-import { AddAlertType } from '@app/index';
+import { AddAlertContext } from '@app/utils/alertContext';
 
 export const CHIs: React.FunctionComponent = () => {
   const [CHIs, setCHIs] = useState(new Array<CHI>())
@@ -35,7 +35,6 @@ export const CHIs: React.FunctionComponent = () => {
   const mounted = useRef(false)
   const pageVisible = useRef(true)
   pageVisible.current = usePageVisibility()
-  const AddAlertContext = React.createContext<AddAlertType>(() => {return undefined})
   const addAlert = useContext(AddAlertContext)
   const fetchData = () => {
     fetchWithErrorHandling(`/api/v1/chis`, 'GET',

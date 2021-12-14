@@ -4,7 +4,7 @@ import { useContext, useState } from 'react';
 import { AlertVariant, Bullseye, Button, Grid, GridItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
 import { NamespaceSelector } from '@app/Namespaces/NamespaceSelector';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
-import { AddAlertType } from '@app/index';
+import { AddAlertContext } from '@app/utils/alertContext';
 
 export interface NewOperatorModalProps extends ToggleModalSubProps {
   isUpgrade: boolean
@@ -17,7 +17,6 @@ export const NewOperatorModal: React.FunctionComponent<NewOperatorModalProps> = 
   let selectedNamespace: string
   let setSelectedNamespace: (string) => void
   const [selectedNamespaceState, setSelectedNamespaceState] = useState("")
-  const AddAlertContext = React.createContext<AddAlertType>(() => {return undefined})
   const addAlert = useContext(AddAlertContext)
   if (props.namespace) {
     selectedNamespace = props.namespace

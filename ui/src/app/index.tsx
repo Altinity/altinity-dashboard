@@ -6,6 +6,7 @@ import { AppRoutes } from '@app/routes';
 import '@app/app.css';
 import { Alert, AlertActionCloseButton, AlertGroup, AlertVariant } from '@patternfly/react-core';
 import { useState } from 'react';
+import { AddAlertContextProvider, AddAlertType } from '@app/utils/alertContext';
 
 interface AlertData {
   title: string
@@ -13,20 +14,17 @@ interface AlertData {
   key: number
 }
 
-export type AddAlertType = (title: string, variant: AlertVariant) => void
-
 const App: React.FunctionComponent = () => {
   const [alerts, setAlerts] = useState(new Array<AlertData>())
   const addAlert: AddAlertType = (title: string, variant: AlertVariant): void => {
     setAlerts([...alerts, {title: title, variant: variant, key: new Date().getTime()}])
   }
-  const AddAlertContext = React.createContext<AddAlertType>(() => {return undefined})
   const removeAlert = (key: number): void => {
     setAlerts([...alerts.filter(a => a.key !== key)])
   }
   return (
     <Router>
-      <AddAlertContext.Provider value={addAlert}>
+      <AddAlertContextProvider value={addAlert}>
         <AppLayout>
           <AlertGroup isToast isLiveRegion>
             {alerts.map(({ key, variant, title }) => (
@@ -45,7 +43,7 @@ const App: React.FunctionComponent = () => {
           </AlertGroup>
           <AppRoutes/>
         </AppLayout>
-      </AddAlertContext.Provider>
+      </AddAlertContextProvider>
     </Router>
   )
 }
