@@ -16,7 +16,7 @@ import { ToggleModal } from '@app/Components/ToggleModal';
 import { SimpleModal } from '@app/Components/SimpleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { CHIModal } from '@app/CHIs/CHIModal';
-import { ExpandableTable } from '@app/Components/ExpandableTable';
+import { ExpandableTable, WarningType } from '@app/Components/ExpandableTable';
 import { CHI } from '@app/CHIs/model';
 import { ExpandableRowContent, TableComposable, TableVariant, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { humanFileSize } from '@app/utils/humanFileSize';
@@ -110,6 +110,36 @@ export const CHIs: React.FunctionComponent = () => {
       return 0
     }
   }
+  const warnings = new Array<WarningType|undefined>()
+  CHIs.forEach(chi => {
+    let anyNoStorage = false
+    let anyUnbound = false
+    chi.ch_cluster_pods.forEach(pod => {
+      if (pod.pvcs.length === 0) {
+        anyNoStorage = true
+      } else {
+        pod.pvcs.forEach(pvc => {
+          if (pvc.bound_pv === undefined) {
+            anyUnbound = true
+          }
+        })
+      }
+    })
+    if (anyNoStorage) {
+      warnings.push({
+        variant: "error",
+        text: "One or more pods have no storage configured.",
+      })
+    } else if (anyUnbound) {
+      warnings.push({
+        variant: "warning",
+        text: "One or more pods have a PVC not bound to a PV.",
+      })
+    } else {
+      warnings.push(undefined)
+    }
+  })
+
   return (
     <PageSection>
       <SimpleModal
@@ -151,6 +181,7 @@ export const CHIs: React.FunctionComponent = () => {
             data={CHIs}
             columns={['Name', 'Namespace', 'Status', 'Clusters', 'Hosts']}
             column_fields={['name', 'namespace', 'status', 'clusters', 'hosts']}
+            warnings={warnings}
             data_modifier={(data: object, field: string): ReactElement | string => {
               if (field === "name" && "external_url" in data && data["external_url"]) {
                 return (

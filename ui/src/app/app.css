@@ -8,6 +8,16 @@ html, body, #root {
   --pf-c-table--nested--first-last-child--PaddingRight: var(--pf-global--spacer--md);
   --pf-c-table--nested--first-last-child--PaddingLeft: var(--pf-global--spacer--md);
 }
+.table-row-with-warning {
+  --pf-c-table--border-width--base: 0;
+}
+.pf-c-table tr > .table-row-with-warning {
+  padding-bottom: 0;
+}
+.pf-c-table tr > .table-warning-row {
+  padding-top: 0;
+  /*padding: 0 var(--pf-c-table--cell--PaddingRight) var(--pf-c-table--cell--PaddingBottom) var(--pf-c-table--cell--PaddingLeft);*/
+}
 .padded-bullseye {
   --pf-l-bullseye--Padding: 1rem;
 }

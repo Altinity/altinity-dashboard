@@ -45,17 +45,19 @@ func getPVCsFromPod(pod corev1.Pod) ([]PersistentVolumeClaim, error) {
 				return nil, err
 			}
 			var pv *corev1.PersistentVolume
-			pv, err = k.Clientset.CoreV1().PersistentVolumes().Get(context.TODO(),
-				pvc.Spec.VolumeName, metav1.GetOptions{})
-			if err != nil {
-				pv = nil
-				var sv *errors2.StatusError
-				if errors.As(err, &sv) {
-					if sv.ErrStatus.Reason != "NotFound" {
+			if pvc.Spec.VolumeName != "" {
+				pv, err = k.Clientset.CoreV1().PersistentVolumes().Get(context.TODO(),
+					pvc.Spec.VolumeName, metav1.GetOptions{})
+				if err != nil {
+					pv = nil
+					var sv *errors2.StatusError
+					if errors.As(err, &sv) {
+						if sv.ErrStatus.Reason != "NotFound" {
+							return nil, err
+						}
+					} else {
 						return nil, err
 					}
-				} else {
-					return nil, err
 				}
 			}
 			var boundPV *PersistentVolume
