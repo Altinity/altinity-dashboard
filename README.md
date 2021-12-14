@@ -2,6 +2,19 @@
 
 This is a preliminary version of the Altinity Dashboard.  It is used for viewing and managing Kubernetes-based ClickHouse installations controlled by [clickhouse-operator](https://github.com/altinity/clickhouse-operator).
 
+### What is this?
+
+The Altinity Dashboard allows easy deployment and management of ClickHouse in Kubernetes, managed using the Altinity clickhouse-operator.  Using the dashboard, you can:
+
+* Deploy clickhouse-operator to your Kubernetes cluster.
+* Upgrade clickhouse-operator.
+* Remove clickhouse-operator.
+
+* Deploy a ClickHouse Installation from a YAML specification (examples are provided), including the ability to define the cluster layout, storage, users and other operational parameters.
+* Modify existing ClickHouse Installations, even if they were not created by the Dashboard (as long as they are managed by clickhouse-operator).
+
+* View containers and storage used by ClickHouse Installations, and their status.
+
 ### How To Use
 
 * First, make sure you have a valid kubeconfig pointing to the Kubernetes cluster you want to work with.
