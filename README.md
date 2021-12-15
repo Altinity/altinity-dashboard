@@ -15,7 +15,11 @@ The Altinity Dashboard allows easy deployment and management of ClickHouse in Ku
 
 * View containers and storage used by ClickHouse Installations, and their status.
 
-### How To Use
+### Production Readiness
+
+Current builds of Altinity Dashboard should be considered pre-release, and are not ready for production deployment.  We are using an upstream-first open source development model, so you can see and run the code, but it is not yet a stable release.
+
+### How to Use
 
 * First, make sure you have a valid kubeconfig pointing to the Kubernetes cluster you want to work with.
 
@@ -67,4 +71,8 @@ Back-end development:
 Front-end development:
 
 * `make ui-devel` will start a filesystem watcher / hot reloader for UI development.
+
+### Talk to Us
+
+If you have questions or want to chat, [join the altinitydb Slack](https://join.slack.com/t/altinitydbworkspace/shared_invite/zt-w6mpotc1-fTz9oYp0VM719DNye9UvrQ) and talk to us in the #kubernetes channel.
 
