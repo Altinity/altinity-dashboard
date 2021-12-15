@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/altinity/altinity-dashboard/internal/api"
-	"github.com/altinity/altinity-dashboard/internal/auth"
 	"github.com/altinity/altinity-dashboard/internal/certs"
 	"github.com/altinity/altinity-dashboard/internal/utils"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
@@ -180,7 +179,7 @@ func (c *Config) RunServer() (context.Context, error) {
 			return nil, fmt.Errorf("error generating random number: %w", err)
 		}
 		authToken = base64.RawURLEncoding.EncodeToString(randBytes)
-		httpHandler = auth.NewHandler(httpMux, authToken)
+		httpHandler = NewHandler(httpMux, authToken)
 	}
 
 	// Set up the server
