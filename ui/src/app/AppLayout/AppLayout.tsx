@@ -19,7 +19,7 @@ interface IAppLayout {
 
 export const AppLayout: React.FunctionComponent<IAppLayout> = (props) => {
   const [isNavOpen, setIsNavOpen] = React.useState(true);
-  const [isNavOpenMobile, setIsNavOpenMobile] = React.useState(true);
+  const [isNavOpenMobile, setIsNavOpenMobile] = React.useState(false);
   const [isMobileView, setIsMobileView] = React.useState(true);
   const onNavToggleMobile = () => {
     setIsNavOpenMobile(!isNavOpenMobile);
