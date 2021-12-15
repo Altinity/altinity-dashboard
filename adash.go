@@ -8,6 +8,8 @@ import (
 	_ "github.com/altinity/altinity-dashboard/internal/api"
 	"github.com/altinity/altinity-dashboard/internal/server"
 	"github.com/altinity/altinity-dashboard/internal/utils"
+	"github.com/asticode/go-astikit"
+	"github.com/asticode/go-astilectron"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"log"
 	"os"
@@ -46,6 +48,47 @@ func openWebBrowser(url string) {
 	}
 }
 
+func runElectronApp(url string, debug bool) error {
+	// Initialize astilectron
+	var logger astikit.StdLogger
+	if debug {
+		logger = log.Default()
+	}
+	a, err := astilectron.New(logger, astilectron.Options{
+		AppName:            "Altinity Dashboard",
+		VersionAstilectron: astilectron.DefaultVersionAstilectron,
+		VersionElectron:    astilectron.DefaultVersionElectron,
+	})
+	if err != nil {
+		return err
+	}
+	defer a.Close()
+	err = a.Start()
+	if err != nil {
+		return err
+	}
+
+	// Create a new window
+	w, err := a.NewWindow(url, &astilectron.WindowOptions{
+		Center: astikit.BoolPtr(true),
+		WebPreferences: &astilectron.WebPreferences{
+			Partition: astikit.StrPtr("altinity-dashboard"),
+		},
+		Width:  astikit.IntPtr(1200),
+		Height: astikit.IntPtr(700),
+	})
+	if err != nil {
+		return err
+	}
+	err = w.Create()
+	if err != nil {
+		return err
+	}
+
+	a.Wait()
+	return nil
+}
+
 func main() {
 	// Set up CLI parser
 	cmdFlags := flag.NewFlagSet("adash", flag.ContinueOnError)
@@ -60,6 +103,7 @@ func main() {
 	openBrowser := cmdFlags.Bool("openbrowser", false, "open the UI in a web browser after starting")
 	version := cmdFlags.Bool("version", false, "show version and exit")
 	debug := cmdFlags.Bool("debug", false, "enable debug logging")
+	electron := cmdFlags.Bool("electron", false, "run Electron GUI app")
 
 	// Parse the CLI flags
 	err := cmdFlags.Parse(os.Args[1:])
@@ -94,7 +138,7 @@ func main() {
 		BindHost:    *bindHost,
 		BindPort:    *bindPort,
 		DevMode:     *devMode,
-		NoToken:     *noToken,
+		NoToken:     *noToken || *electron,
 		AppVersion:  appVersion,
 		ChopRelease: chopRelease,
 		UIFiles:     &uiFiles,
@@ -109,6 +153,17 @@ func main() {
 	if *openBrowser {
 		openWebBrowser(c.URL)
 	}
+
+	if *electron {
+		go func() {
+			err := runElectronApp(c.URL, *debug)
+			if err != nil {
+				log.Fatal(err)
+			}
+			os.Exit(0)
+		}()
+	}
+
 	<-ctx.Done()
 	log.Fatalf("Error: %s", c.ServerError)
 }
