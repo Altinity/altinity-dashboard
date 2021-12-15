@@ -74,5 +74,5 @@ Front-end development:
 
 ### Talk to Us
 
-If you have questions or want to chat, [join the altinitydb Slack](https://join.slack.com/t/altinitydbworkspace/shared_invite/zt-w6mpotc1-fTz9oYp0VM719DNye9UvrQ) and talk to us in the #kubernetes channel.
+If you have questions or want to chat, [join the altinitydb Slack](https://join.slack.com/t/altinitydbworkspace/shared_invite/zt-w6mpotc1-fTz9oYp0VM719DNye9UvrQ) and talk to us in the `#kubernetes` channel.
 
