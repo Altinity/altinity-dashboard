@@ -1,6 +1,8 @@
 # Altinity Dashboard
 
-This is a preliminary version of the Altinity Dashboard.  It is used for viewing and managing Kubernetes-based ClickHouse installations controlled by [clickhouse-operator](https://github.com/altinity/clickhouse-operator).
+This is a preliminary version of the Altinity Dashboard.  It is used for viewing and managing Kubernetes-based ClickHouse installations controlled by [clickhouse-operator](https://github.com/altinity/clickhouse-operator).  It looks like this:
+
+![image](https://user-images.githubusercontent.com/2052848/146246541-4073218c-92be-4ccb-8a4d-b5bbc7f9a309.png)
 
 ### What is this?
 
