@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { ToggleModalSubProps } from '@app/Components/ToggleModal';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import {
   AlertVariant,
@@ -16,6 +16,7 @@ import CodeIcon from '@patternfly/react-icons/dist/esm/icons/code-icon';
 import { ListSelector } from '@app/Components/ListSelector';
 import { StringHasher } from '@app/Components/StringHasher';
 import { CHI } from '@app/CHIs/model';
+import { AddAlertContext } from '@app/utils/alertContext';
 
 export interface CHIModalProps extends ToggleModalSubProps {
   isUpdate?: boolean
@@ -24,18 +25,16 @@ export interface CHIModalProps extends ToggleModalSubProps {
 }
 
 export const CHIModal: React.FunctionComponent<CHIModalProps> = (props: CHIModalProps) => {
-  const { addAlert, isModalOpen, isUpdate, CHIName, CHINamespace } = props
+  const { isModalOpen, isUpdate, CHIName, CHINamespace } = props
   const outerCloseModal = props.closeModal
   const [selectedNamespace, setSelectedNamespace] = useState("")
   const [yaml, setYaml] = useState("")
   const [exampleListValues, setExampleListValues] = useState(new Array<string>())
+  const addAlert = useContext(AddAlertContext)
+
   const closeModal = (): void => {
     setSelectedNamespace("")
     outerCloseModal()
-  }
-  const closeModalAndClearEditor = (): void => {
-    closeModal()
-    setYaml("")
   }
   const setYamlFromEditor = (editor: IStandaloneCodeEditor) => {
     setYaml(editor.getValue())
@@ -49,13 +48,13 @@ export const CHIModal: React.FunctionComponent<CHIModalProps> = (props: CHIModal
         yaml: yaml
       },
       () => {
-        closeModalAndClearEditor()
+        setYaml("")
       },
       (response, text, error) => {
         const errorMessage = (error == "") ? text : `${error}: ${text}`
         addAlert(`Error ${action} CHI: ${errorMessage}`, AlertVariant.danger)
-        closeModal()
       })
+    closeModal()
   }
   useEffect(() => {
     if (!isUpdate && exampleListValues.length === 0) {

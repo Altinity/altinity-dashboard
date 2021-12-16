@@ -36,13 +36,13 @@ export const NewOperatorModal: React.FunctionComponent<NewOperatorModalProps> = 
       {
         version: selectedVersion
       },
-      () => { closeModal() },
+      undefined,
       (response, text, error) => {
-        closeModal()
         const errorMessage = (error == "") ? text : `${error}: ${text}`
         addAlert(`Error updating operator: ${errorMessage}`, AlertVariant.danger)
       }
     )
+    closeModal()
   }
   const latestChop = (document.querySelector('meta[name="chop-release"]') as HTMLMetaElement)?.content || "latest"
   return (
