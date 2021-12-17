@@ -75,8 +75,9 @@ func (o *OperatorResource) getOperatorPodsFromDeployment(namespace string, deplo
 		return nil, err
 	}
 	list := make([]OperatorPod, 0, len(pods.Items))
-	for _, pod := range pods.Items {
-		l := pod.Labels
+	for i := range pods.Items {
+		k8pod := pods.Items[i]
+		l := k8pod.Labels
 		ver, ok := l["version"]
 		if !ok {
 			ver, ok = l["clickhouse.altinity.com/chop"]
@@ -84,12 +85,13 @@ func (o *OperatorResource) getOperatorPodsFromDeployment(namespace string, deplo
 				ver = "unknown"
 			}
 		}
+		var pod *Pod
+		pod, err = getPodFromK8sPod(&k8pod)
+		if err != nil {
+			return nil, err
+		}
 		list = append(list, OperatorPod{
-			Pod: Pod{
-				Name:       pod.Name,
-				Status:     string(pod.Status.Phase),
-				Containers: getContainersFromPod(pod),
-			},
+			Pod:     *pod,
 			Version: ver,
 		})
 	}

@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func getContainersFromPod(pod corev1.Pod) []Container {
+func getContainersFromPod(pod *corev1.Pod) []Container {
 	cs := pod.Status.ContainerStatuses
 	list := make([]Container, 0, len(cs))
 	for _, c := range cs {
@@ -32,7 +32,7 @@ func getContainersFromPod(pod corev1.Pod) []Container {
 	return list
 }
 
-func getPVCsFromPod(pod corev1.Pod) ([]PersistentVolumeClaim, error) {
+func getPVCsFromPod(pod *corev1.Pod) ([]PersistentVolumeClaim, error) {
 	k := utils.GetK8s()
 	defer func() { k.ReleaseK8s() }()
 
@@ -120,19 +120,29 @@ func getK8sServicesFromLabelSelector(namespace string, selector *metav1.LabelSel
 	return services, nil
 }
 
-func getPodsFromK8sPods(pods *corev1.PodList) ([]Pod, error) {
-	list := make([]Pod, 0, len(pods.Items))
-	for _, pod := range pods.Items {
-		pvcs, err := getPVCsFromPod(pod)
+func getPodFromK8sPod(pod *corev1.Pod) (*Pod, error) {
+	pvcs, err := getPVCsFromPod(pod)
+	if err != nil {
+		return nil, err
+	}
+	return &Pod{
+		Name:       pod.Name,
+		Node:       pod.Spec.NodeName,
+		Status:     string(pod.Status.Phase),
+		Containers: getContainersFromPod(pod),
+		PVCs:       pvcs,
+	}, nil
+}
+
+func getPodsFromK8sPods(pods *corev1.PodList) ([]*Pod, error) {
+	list := make([]*Pod, 0, len(pods.Items))
+	for i := range pods.Items {
+		k8pod := pods.Items[i]
+		pod, err := getPodFromK8sPod(&k8pod)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, Pod{
-			Name:       pod.Name,
-			Status:     string(pod.Status.Phase),
-			Containers: getContainersFromPod(pod),
-			PVCs:       pvcs,
-		})
+		list = append(list, pod)
 	}
 	return list, nil
 }

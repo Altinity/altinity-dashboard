@@ -185,8 +185,8 @@ export const Operators: React.FunctionComponent = () => {
                 keyPrefix="operator-pods"
                 table_variant="compact"
                 data={data.pods}
-                columns={['Pod', 'Status', 'Version']}
-                column_fields={['name', 'status', 'version']}
+                columns={['Pod', 'Status', 'Node', 'Version']}
+                column_fields={['name', 'status', 'node', 'version']}
                 expanded_content={(data) => (
                   <ExpandableTable table_variant="compact"
                     keyPrefix="operator-containers"

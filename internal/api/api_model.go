@@ -6,6 +6,7 @@ type Namespace struct {
 
 type Pod struct {
 	Name       string                  `json:"name" description:"name of the pod"`
+	Node       string                  `json:"node" description:"node the pod is nominated to run on"`
 	Status     string                  `json:"status" description:"status of the pod"`
 	Containers []Container             `json:"containers" description:"containers in the pod"`
 	PVCs       []PersistentVolumeClaim `json:"pvcs" description:"persistent volume claims of this pod"`

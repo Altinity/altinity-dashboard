@@ -145,14 +145,14 @@ func (c *ChiResource) getCHIs(request *restful.Request, response *restful.Respon
 			var kubePods *v1.PodList
 			kubePods, err = getK8sPodsFromLabelSelector(chi.Namespace, sel)
 			if err == nil {
-				var pods []Pod
+				var pods []*Pod
 				pods, err = getPodsFromK8sPods(kubePods)
 				if err != nil {
 					return err
 				}
 				for _, pod := range pods {
 					chClusterPod := CHClusterPod{
-						Pod:         pod,
+						Pod:         *pod,
 						ClusterName: cluster.Name,
 					}
 					chClusterPods = append(chClusterPods, chClusterPod)

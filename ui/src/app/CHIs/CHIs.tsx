@@ -218,8 +218,8 @@ export const CHIs: React.FunctionComponent = () => {
                 table_variant="compact"
                 keyPrefix="CHI-pods"
                 data={data.ch_cluster_pods}
-                columns={['Cluster', 'Pod', 'Status']}
-                column_fields={['cluster_name', 'name', 'status']}
+                columns={['Cluster', 'Pod', 'Status', 'Node']}
+                column_fields={['cluster_name', 'name', 'status', 'node']}
                 expanded_content={(data) => (
                   <Tabs activeKey={getActiveTabKey(data.name)} onSelect={
                     (event: React.MouseEvent<HTMLElement, MouseEvent>, eventKey: string | number) => {
