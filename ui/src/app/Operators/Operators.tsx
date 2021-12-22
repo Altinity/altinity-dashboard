@@ -8,14 +8,16 @@ import {
   SplitItem,
   Title
 } from '@patternfly/react-core';
-import { SimpleModal } from '@app/Components/SimpleModal';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { ExpandableTable } from '@app/Components/ExpandableTable';
+import { usePageVisibility } from 'react-page-visibility';
+import * as semver from 'semver';
+
+import { SimpleModal } from '@app/Components/SimpleModal';
+import { ExpandableTable, WarningType } from '@app/Components/ExpandableTable';
 import { ToggleModal, ToggleModalSubProps } from '@app/Components/ToggleModal';
 import { fetchWithErrorHandling } from '@app/utils/fetchWithErrorHandling';
 import { NewOperatorModal } from '@app/Operators/NewOperatorModal';
 import { Loading } from '@app/Components/Loading';
-import { usePageVisibility } from 'react-page-visibility';
 import { AddAlertContext } from '@app/utils/alertContext';
 
 interface Container {
@@ -117,6 +119,20 @@ export const Operators: React.FunctionComponent = () => {
   const retrieveErrorPane = retrieveError === undefined ? null : (
     <Alert variant="danger" title={retrieveError} isInline/>
   )
+  const latestChop = (document.querySelector('meta[name="chop-release"]') as HTMLMetaElement)?.content || "latest"
+  const latestChopVer = semver.valid(latestChop)
+  const warnings = new Array<Array<WarningType>|undefined>()
+  operators.forEach(op => {
+    const warningsList = new Array<WarningType>()
+    const opVer = semver.valid(op.version)
+    if (latestChopVer && opVer && semver.lt(opVer, latestChopVer)) {
+      warningsList.push({
+        variant: "warning",
+        text: "Operator is not the latest version.",
+      })
+    }
+    warnings.push(warningsList.length > 0 ? warningsList : undefined)
+  })
   return (
     <PageSection>
       <SimpleModal
@@ -164,6 +180,7 @@ export const Operators: React.FunctionComponent = () => {
             data={operators}
             columns={['Name', 'Namespace', 'Conditions', 'Version']}
             column_fields={['name', 'namespace', 'conditions', 'version']}
+            warnings={warnings}
             actions={(item: Operator) => {
               return {
                 items: [
