@@ -11,7 +11,7 @@ export const ExpandableTable: React.FunctionComponent<
     data: Array<object>
     columns: Array<string>
     column_fields: Array<string>
-    warnings?: Array<WarningType|undefined>
+    warnings?: Array<Array<WarningType>|undefined>
     expanded_content?: (object) => ReactElement
     actions?: (object) => TdActionsType
     table_variant?: "compact"
@@ -60,18 +60,24 @@ export const ExpandableTable: React.FunctionComponent<
           let warningClass: string|undefined = undefined
           let warningContent: ReactElement|null = null
           if (props.warnings) {
-            const warning = props.warnings[dataIndex]
-            if (warning) {
-              const { variant, text } = warning
+            const warnings = props.warnings[dataIndex]
+            if (warnings) {
               warningClass = "table-row-with-warning"
               warningContent = (
                 <Tr className="table-warning-row">
                   <Td className="table-warning-row" />
                   <Td className="table-warning-row" colSpan={6}>
                     <HelperText>
-                      <HelperTextItem variant={variant} hasIcon>
-                        {text}
-                      </HelperTextItem>
+                      {
+                        warnings.map((warning, index) => {
+                          const { variant, text } = warning
+                          return (
+                            <HelperTextItem key={index} variant={variant} hasIcon>
+                              {text}
+                            </HelperTextItem>
+                          )
+                        })
+                      }
                     </HelperText>
                   </Td>
                 </Tr>

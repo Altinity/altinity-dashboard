@@ -109,7 +109,7 @@ export const CHIs: React.FunctionComponent = () => {
       return 0
     }
   }
-  const warnings = new Array<WarningType|undefined>()
+  const warnings = new Array<Array<WarningType>|undefined>()
   CHIs.forEach(chi => {
     let anyNoStorage = false
     let anyUnbound = false
@@ -124,19 +124,20 @@ export const CHIs: React.FunctionComponent = () => {
         })
       }
     })
+    const warningsList = new Array<WarningType>()
     if (anyNoStorage) {
-      warnings.push({
+      warningsList.push({
         variant: "error",
         text: "One or more pods have no storage configured.",
       })
-    } else if (anyUnbound) {
-      warnings.push({
+    }
+    if (anyUnbound) {
+      warningsList.push({
         variant: "warning",
         text: "One or more pods have a PVC not bound to a PV.",
       })
-    } else {
-      warnings.push(undefined)
     }
+    warnings.push(warningsList.length > 0 ? warningsList : undefined)
   })
 
   return (
