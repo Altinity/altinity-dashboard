@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"github.com/coreos/etcd/pkg/fileutil"
 	"io/ioutil"
 	"math/big"
 	"os"
@@ -45,7 +44,7 @@ func GenerateSelfSignedCerts(removeOnExit bool) (certFileName string, keyFileNam
 	if err != nil {
 		return "", "", err
 	}
-	err = keyFile.Chmod(fileutil.PrivateFileMode)
+	err = keyFile.Chmod(0600)
 	if err != nil {
 		return "", "", err
 	}
