@@ -37,7 +37,7 @@
     "enzyme": "^3.11.0",
     "enzyme-to-json": "^3.6.2",
     "eslint": "^8.5.0",
-    "eslint-plugin-react": "^7.24.0",
+    "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.2.0",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.3.1",
@@ -47,7 +47,7 @@
     "mini-css-extract-plugin": "^2.4.5",
     "postcss": "^8.4.5",
     "prettier": "^2.5.1",
-    "prop-types": "^15.7.2",
+    "prop-types": "^15.8.0",
     "raw-loader": "^4.0.2",
     "react-axe": "^3.5.4",
     "react-docgen-typescript-loader": "^2.2.0",
@@ -66,7 +66,7 @@
     "webpack": "^5.64.4",
     "webpack-bundle-analyzer": "^4.4.2",
     "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^4.7.0",
+    "webpack-dev-server": "^4.7.1",
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
