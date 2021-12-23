@@ -47,7 +47,7 @@
     "mini-css-extract-plugin": "^2.4.5",
     "postcss": "^8.4.5",
     "prettier": "^2.5.1",
-    "prop-types": "^15.7.2",
+    "prop-types": "^15.8.0",
     "raw-loader": "^4.0.2",
     "react-axe": "^3.5.4",
     "react-docgen-typescript-loader": "^2.2.0",
