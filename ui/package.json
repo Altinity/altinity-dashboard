@@ -23,7 +23,7 @@
     "install-git-hooks": "cd .. && husky install ui/.husky"
   },
   "devDependencies": {
-    "@types/enzyme": "^3.10.8",
+    "@types/enzyme": "^3.10.11",
     "@types/jest": "^27.4.0",
     "@types/react-router-dom": "^5.3.0",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
@@ -76,7 +76,7 @@
     "@patternfly/react-icons": "^4.32.1",
     "@patternfly/react-styles": "^4.31.1",
     "@patternfly/react-table": "^4.50.1",
-    "concurrently": "^6.5.1",
+    "concurrently": "^7.0.0",
     "jssha": "^3.2.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
