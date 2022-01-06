@@ -1,14 +1,13 @@
 name: dependabot-auto-merge
 
 on:
-  pull_request:
+  pull_request_target:
 
 jobs:
   dependabot-auto-merge:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
       - uses: ahmadnassri/action-dependabot-auto-merge@v2
         with:
           target: major
-          github-token: ${{ secrets.dependabot_pat_ghjm }}
+          github-token: ${{ secrets.DEPENDABOT_PAT_GHJM }}
