@@ -62,20 +62,34 @@ func getPVCsFromPod(pod *corev1.Pod) ([]PersistentVolumeClaim, error) {
 			}
 			var boundPV *PersistentVolume
 			if pv != nil {
+				var storageCapacity int64
+				stor := pv.Spec.Capacity.Storage()
+				if stor != nil {
+					storageCapacity = stor.Value()
+				}
 				boundPV = &PersistentVolume{
 					Name:          pv.Name,
 					Phase:         string(pv.Status.Phase),
 					StorageClass:  pv.Spec.StorageClassName,
-					Capacity:      pv.Spec.Capacity.Storage().Value(),
+					Capacity:      storageCapacity,
 					ReclaimPolicy: string(pv.Spec.PersistentVolumeReclaimPolicy),
 				}
+			}
+			var storageClass string
+			if pvc.Spec.StorageClassName != nil {
+				storageClass = *pvc.Spec.StorageClassName
+			}
+			var storageCapacity int64
+			stor := pvc.Spec.Resources.Requests.Storage()
+			if stor != nil {
+				storageCapacity = stor.Value()
 			}
 			list = append(list, PersistentVolumeClaim{
 				Name:         pvc.Name,
 				Namespace:    pvc.Namespace,
 				Phase:        string(pvc.Status.Phase),
-				StorageClass: *pvc.Spec.StorageClassName,
-				Capacity:     pvc.Spec.Resources.Requests.Storage().Value(),
+				StorageClass: storageClass,
+				Capacity:     storageCapacity,
 				BoundPV:      boundPV,
 			})
 		}
