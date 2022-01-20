@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"embed"
 	"flag"
 	"fmt"
@@ -100,8 +99,7 @@ func main() {
 		UIFiles:     &uiFiles,
 		EmbedFiles:  &embedFiles,
 	}
-	var ctx context.Context
-	ctx, err = c.RunServer()
+	err = c.RunServer()
 	if err != nil {
 		log.Fatalf("Error: %s", err)
 	}
@@ -109,6 +107,6 @@ func main() {
 	if *openBrowser {
 		openWebBrowser(c.URL)
 	}
-	<-ctx.Done()
+	<-c.Context.Done()
 	log.Fatalf("Error: %s", c.ServerError)
 }

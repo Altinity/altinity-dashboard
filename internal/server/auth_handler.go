@@ -4,6 +4,7 @@ import "net/http"
 
 type Handler struct {
 	authToken   string
+	isHTTPS     bool
 	origHandler http.Handler
 }
 
@@ -14,7 +15,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{
 			Name:     "token",
 			Value:    tokReq,
-			Secure:   true,
+			Secure:   h.isHTTPS,
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
 		})
@@ -33,9 +34,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.origHandler.ServeHTTP(w, r)
 }
 
-func NewHandler(origHandler http.Handler, authToken string) http.Handler {
+func NewHandler(origHandler http.Handler, authToken string, isHTTPS bool) http.Handler {
 	return &Handler{
 		authToken:   authToken,
+		isHTTPS:     isHTTPS,
 		origHandler: origHandler,
 	}
 }

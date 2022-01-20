@@ -36,19 +36,22 @@ type Config struct {
 	UIFiles     *embed.FS
 	EmbedFiles  *embed.FS
 	URL         string
+	IsHTTPS     bool
 	ServerError error
+	Context     context.Context
+	Cancel      func()
 }
 
 var ErrTLSCertKeyBothOrNeither = errors.New("TLS cert and key must both be provided or neither")
 var ErrTLSOrSelfSigned = errors.New("cannot provide TLS certificate and also run self-signed")
 
-func (c *Config) RunServer() (context.Context, error) {
+func (c *Config) RunServer() error {
 	// Check CLI flags for correctness
 	if (c.TLSCert == "") != (c.TLSKey == "") {
-		return nil, ErrTLSCertKeyBothOrNeither
+		return ErrTLSCertKeyBothOrNeither
 	}
 	if (c.SelfSigned) && (c.TLSCert != "") {
-		return nil, ErrTLSOrSelfSigned
+		return ErrTLSOrSelfSigned
 	}
 
 	// Enable debug logging, if requested
@@ -59,14 +62,14 @@ func (c *Config) RunServer() (context.Context, error) {
 	// Connect to Kubernetes
 	err := utils.InitK8s(c.Kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("could not connect to Kubernetes: %w", err)
+		return fmt.Errorf("could not connect to Kubernetes: %w", err)
 	}
 
 	// If self-signed, generate the certificates
 	if c.SelfSigned {
 		c.TLSCert, c.TLSKey, err = certs.GenerateSelfSignedCerts(true)
 		if err != nil {
-			return nil, fmt.Errorf("error generating self-signed certificate: %w", err)
+			return fmt.Errorf("error generating self-signed certificate: %w", err)
 		}
 	}
 
@@ -83,7 +86,7 @@ func (c *Config) RunServer() (context.Context, error) {
 	var indexHTML []byte
 	indexHTML, err = c.UIFiles.ReadFile("ui/dist/index.html")
 	if err != nil {
-		return nil, fmt.Errorf("error reading embedded UI files: %w", err)
+		return fmt.Errorf("error reading embedded UI files: %w", err)
 	}
 	for name, content := range map[string]string{
 		"devmode":      strconv.FormatBool(c.DevMode),
@@ -115,7 +118,7 @@ func (c *Config) RunServer() (context.Context, error) {
 		var ws *restful.WebService
 		ws, err = resource.WebService(&wsi)
 		if err != nil {
-			return nil, fmt.Errorf("error initializing %s web service: %w", resource.Name(), err)
+			return fmt.Errorf("error initializing %s web service: %w", resource.Name(), err)
 		}
 		rc.Add(ws)
 	}
@@ -128,7 +131,7 @@ func (c *Config) RunServer() (context.Context, error) {
 	// Create handler for the CHI examples
 	examples, err := c.EmbedFiles.ReadDir("embed/chi-examples")
 	if err != nil {
-		return nil, fmt.Errorf("error reading embedded examples: %w", err)
+		return fmt.Errorf("error reading embedded examples: %w", err)
 	}
 	exampleStrings := make([]string, 0, len(examples))
 	for _, ex := range examples {
@@ -138,7 +141,7 @@ func (c *Config) RunServer() (context.Context, error) {
 	}
 	exampleIndex, err := json.Marshal(exampleStrings)
 	if err != nil {
-		return nil, fmt.Errorf("error reading example index JSON: %w", err)
+		return fmt.Errorf("error reading example index JSON: %w", err)
 	}
 	subFilesChi, _ := fs.Sub(c.EmbedFiles, "embed/chi-examples")
 	subServerChi := http.StripPrefix("/chi-examples/", http.FileServer(http.FS(subFilesChi)))
@@ -167,6 +170,7 @@ func (c *Config) RunServer() (context.Context, error) {
 	})
 
 	// Configure auth middleware
+	c.IsHTTPS = c.TLSCert != ""
 	var httpHandler http.Handler
 	var authToken string
 	if c.NoToken {
@@ -176,10 +180,10 @@ func (c *Config) RunServer() (context.Context, error) {
 		randBytes := make([]byte, 256/8)
 		_, err = rand.Read(randBytes)
 		if err != nil {
-			return nil, fmt.Errorf("error generating random number: %w", err)
+			return fmt.Errorf("error generating random number: %w", err)
 		}
 		authToken = base64.RawURLEncoding.EncodeToString(randBytes)
-		httpHandler = NewHandler(httpMux, authToken)
+		httpHandler = NewHandler(httpMux, authToken, c.IsHTTPS)
 	}
 
 	// Set up the server
@@ -188,31 +192,35 @@ func (c *Config) RunServer() (context.Context, error) {
 	if authToken != "" {
 		authStr = fmt.Sprintf("?token=%s", authToken)
 	}
-	var runServer func() error
-	if c.TLSCert != "" {
-		c.URL = fmt.Sprintf("https://%s%s", bindStr, authStr)
-		runServer = func() error {
-			return http.ListenAndServeTLS(bindStr, c.TLSCert, c.TLSKey, httpHandler)
-		}
-	} else {
-		c.URL = fmt.Sprintf("http://%s%s", bindStr, authStr)
-		runServer = func() error {
-			return http.ListenAndServe(bindStr, httpHandler)
-		}
+	var connHost string
+	connHost, err = utils.BindHostToLocalHost(c.BindHost)
+	if err != nil {
+		return err
 	}
+	var urlScheme string
+	if c.IsHTTPS {
+		urlScheme = "https"
+	} else {
+		urlScheme = "http"
+	}
+	c.URL = fmt.Sprintf("%s://%s:%s%s", urlScheme, connHost, c.BindPort, authStr)
 
 	// Start the server, but capture errors if it immediately fails to start
-	ctx, cancel := context.WithCancel(context.Background())
+	c.Context, c.Cancel = context.WithCancel(context.Background())
 	go func() {
-		c.ServerError = runServer()
-		cancel()
+		if c.IsHTTPS {
+			c.ServerError = http.ListenAndServeTLS(bindStr, c.TLSCert, c.TLSKey, httpHandler)
+		} else {
+			c.ServerError = http.ListenAndServe(bindStr, httpHandler)
+		}
+		c.Cancel()
 	}()
 
 	select {
-	case <-ctx.Done():
-		return nil, c.ServerError
+	case <-c.Context.Done():
+		return c.ServerError
 	case <-time.After(250 * time.Millisecond):
-		return ctx, nil
+		return nil
 	}
 }
 
