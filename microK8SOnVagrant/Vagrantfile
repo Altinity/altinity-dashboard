@@ -1,0 +1,30 @@
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "hashicorp/bionic64"
+  #Ubuntu 18.04
+  config.vm.box_check_update = false
+  config.vm.network "forwarded_port", guest: 8081, host: 8080
+    config.vm.provider "virtualbox" do |vb|
+      vb.gui = false
+      vb.cpus = 2
+      vb.memory = "4096"
+    end
+
+  config.vm.provision "shell", inline: <<-SHELL
+  #!/bin/bash
+  # Update apt and get dependencies
+  sudo apt-get -y update
+  sudo apt-mark hold grub 
+  sudo apt-mark hold grub-pc
+  sudo apt-get -y upgrade
+  sudo apt-get install -y zip unzip curl wget socat ebtables git vim 
+  # install microK8S and add vagrant user to microk8s group
+  sudo snap install microk8s --classic
+  sudo usermod -a -G microk8s vagrant
+  sudo chown -f -R vagrant ~/.kube
+	newgrp microk8s
+  # create config file by copying the microk8s config
+  cd ~/.kube
+  microk8s config > config
+  SHELL
+end

@@ -1,7 +1,7 @@
-Run the below command before run `start minikube` in the VM:
-
-`sudo usermod -aG docker $USER && newgrp docker`
-
+Add config into .kube folder
+mkdir ~/.kube
+cd .kube
+microk8s config > config
 
 Start ClickHouse dashboard on Vagrant (start on host 0.0.0.0 and port 8081)
 
@@ -15,4 +15,5 @@ once started:
 Connect with ClickHouse dashboard from host (using host 0.0.0.0, port 8080 and generated token)
 
 http://0.0.0.0:8080?token=E9fYaKYGViBntEdtZfNNnsravnU7d5uhUJRqRhxIsas
+
 
