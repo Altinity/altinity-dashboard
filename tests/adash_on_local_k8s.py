@@ -10,7 +10,7 @@ def run_on_vagrant_with_minikube(self):
     adash_start_command = "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 &"
     open_altinity_dashboard = "http://0.0.0.0:8080?token=<ADASH TOKEN>"
     link_to_altinity_dashboard_releases = "https://github.com/Altinity/altinity-dashboard/releases"
-    vagrant_default_mounted_dir_in_host = "{directory_path}/Vagrantfile"
+    vagrant_default_mounted_dir_in_host = "{path_to_dashboard_repo}/minikubeOnVagrant"
     vagrant_default_mounted_dir_in_vm = "cd /vagrant" 
     make_executable_command = "chmod 0755 adash"
     server_url = "http://10.0.2.15:8081?token=E9fYaKYGViBntEdtZfNNnsravnU7d5uhUJRqRhxIsas"
@@ -68,7 +68,7 @@ def run_on_vagrant_with_micro_k8s(self):
     adash_start_command = "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 &"
     open_altinity_dashboard = "http://0.0.0.0:8080?token=<ADASH TOKEN>"
     link_to_altinity_dashboard_releases = "https://github.com/Altinity/altinity-dashboard/releases"
-    vagrant_default_mounted_dir_in_host = "{directory_path}/Vagrantfile"
+    vagrant_default_mounted_dir_in_host = "{path_to_dashboard_repo}/microK8SOnVagrant"
     vagrant_default_mounted_dir_in_vm = "cd /vagrant" 
     make_executable_command = "chmod 0755 adash"
     server_url = "http://10.0.2.15:8081?token=E9fYaKYGViBntEdtZfNNnsravnU7d5uhUJRqRhxIsas"
@@ -114,6 +114,72 @@ def run_on_vagrant_with_micro_k8s(self):
     with Then("I stop the vagrant vm", description="command: vagrant halt"):
         pass    
 
+
+
+@TestScenario
+def run_on_vagrant_with_k3s_k8s(self):
+    """Run Altinity Dashboard inside Vagrant with k3s installed
+    """
+    vagrant_up_command = "vagrant up"
+    vagrant_connect_command = "vagrant ssh"    
+    adash_start_command = "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 &"
+    open_altinity_dashboard = "http://0.0.0.0:8080?token=<ADASH TOKEN>"
+    link_to_altinity_dashboard_releases = "https://github.com/Altinity/altinity-dashboard/releases"
+    link_to_k3s_server_latest_release = "https://github.com/rancher/k3s/releases/latest"
+    vagrant_default_mounted_dir_in_host = "{path_to_dashboard_repo}/K3sOnVagrant"
+    vagrant_default_mounted_dir_in_vm = "cd /vagrant" 
+    make_executable_command = "chmod 0755 adash"
+    server_url = "http://10.0.2.15:8081?token=E9fYaKYGViBntEdtZfNNnsravnU7d5uhUJRqRhxIsas"
+    k3s_command_to_verify_deployment = "sudo kubectl get pods --namespace kube-public"
+    k3s_status_verify_command = "systemctl status k3s"
+    k3s_start_command = "sudo k3s server &"
+
+    with Given("I start vagrant vm with k3s installed, kubeconfig file created and port forwarding enabled", description=f"command: {vagrant_up_command}"):
+        pass
+    with And("I download the Altinity Dashboard latest binary file from GitHub", description=f"download link: {link_to_altinity_dashboard_releases}"):
+        pass
+    with And("I copy the Altinity Dashboard latest binary file to the vagrant file folder", description=f"file folder: {vagrant_default_mounted_dir_in_host}"):
+        pass
+    with And("I convert the Altinity Dashboard latest binary file to an executable", description=f"command: {make_executable_command}"):
+        pass
+    with And("I download the k3s server from GitHub", description=f"download link: {link_to_k3s_server_latest_release}"):
+        pass
+    with And("I copy the k3s server file to the vagrant file folder", description=f"file folder: {vagrant_default_mounted_dir_in_host}"):
+        pass
+    with When("I connect to vagrant vm using ssh", description=f"command: {vagrant_connect_command}"):
+        pass
+    with When("I change the directory to vagrant default mounted directory", description=f"command: {vagrant_default_mounted_dir_in_vm}"):
+        pass
+    with When("I verify the status of the k3s", description=f"command: {k3s_status_verify_command}"):
+        pass        
+    with And("I start k3s server inside the vm", description=f"command: {k3s_start_command}"):
+        pass
+    with And("I start Altinity Dashboard inside the vm with open host and 8081 port", description=f"command: {adash_start_command}"):
+        pass
+    with And("I copy the server url with generated token", description=f"server url example: {server_url}"):
+        pass
+    with And("I open the default browser in the host"):
+        pass
+    with And("I copy the server url in the browser"):
+        pass
+    with And("I connect to the Altinity Dashboard running inside the VM from the host mcahine", description=f"command: {open_altinity_dashboard}"):
+        pass
+    with And("I click ClickHouse Operators tab in the Altinity Dashboard"):
+        pass
+    with And("I click plus(+) button on the top of the table view"):
+        pass
+    with And("I select the namespace as kube-public"):
+        pass
+    with And("I click deploy button"):
+        pass
+    with And("I verify the ClickHouse Operator deployed inside the vm via Altinity Dashboard", description=f"command: {k3s_command_to_verify_deployment}"):
+        pass
+    with Then("I exit from the vagrant", description="command: exit"):
+        pass
+    with Then("I stop the vagrant vm", description="command: vagrant halt"):
+        pass    
+
+
 @TestModule
 @Name("adash on local k8s")
 def adash_on_local_k8s(self):
@@ -121,6 +187,7 @@ def adash_on_local_k8s(self):
     """
     Scenario(run=run_on_vagrant_with_minikube, flags=TE | MANUAL)
     Scenario(run=run_on_vagrant_with_micro_k8s, flags=TE | MANUAL)
+    Scenario(run=run_on_vagrant_with_k3s_k8s, flags=TE | MANUAL)
 
 if main():
     adash_on_local_k8s()

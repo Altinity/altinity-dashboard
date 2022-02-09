@@ -1,0 +1,28 @@
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "hashicorp/bionic64"
+  #Ubuntu 18.04
+  config.vm.box_check_update = false
+  config.vm.network "forwarded_port", guest: 8081, host: 8080
+    config.vm.provider "virtualbox" do |vb|
+      vb.gui = false
+      vb.cpus = 2
+      vb.memory = "4096"
+    end
+
+  config.vm.provision "shell", inline: <<-SHELL
+  #!/bin/bash
+  # Update apt and get dependencies
+  sudo apt-get -y update
+  sudo apt-mark hold grub 
+  sudo apt-mark hold grub-pc
+  sudo apt-get -y upgrade
+  sudo apt-get install -y zip unzip curl wget socat ebtables git vim 
+  # install k3s on vagrant user
+  curl -sfL https://get.k3s.io | sh -
+  # copy the k3s configuration to kubeconfig file
+  mkdir ~/.kube
+  cd ~/.kube
+  sudo cat /etc/rancher/k3s/k3s.yaml > config
+  SHELL
+end
