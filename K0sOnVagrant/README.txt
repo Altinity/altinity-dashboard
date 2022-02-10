@@ -1,0 +1,1 @@
+install K0s
