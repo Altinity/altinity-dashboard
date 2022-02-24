@@ -74,7 +74,7 @@
     "@patternfly/react-code-editor": "^4.33.15",
     "@patternfly/react-core": "^4.181.1",
     "@patternfly/react-icons": "^4.49.5",
-    "@patternfly/react-styles": "^4.31.1",
+    "@patternfly/react-styles": "^4.48.5",
     "@patternfly/react-table": "^4.61.15",
     "concurrently": "^7.0.0",
     "jssha": "^3.2.0",
