@@ -14,14 +14,14 @@ Vagrant.configure(2) do |config|
   #!/bin/bash
   # Update apt and get dependencies
   sudo apt-get -y update
-  sudo apt-mark hold grub 
+  sudo apt-mark hold grub
   sudo apt-mark hold grub-pc
   sudo apt-get -y upgrade
-  sudo apt-get install -y zip unzip curl wget socat ebtables git vim 
+  sudo apt-get install -y zip unzip curl wget socat ebtables git vim
   # install k0s on vagrant user
   curl -sSLf https://get.k0s.sh | sudo sh
   echo "export PATH=\$PATH:/usr/local/bin" | sudo tee -a /etc/profile
-  sudo k0s install controller --enable-worker
+  sudo k0s install controller --single --enable-worker
   sleep 30 && sudo k0s start
   sudo systemctl enable k0scontroller
   sudo k0s status
