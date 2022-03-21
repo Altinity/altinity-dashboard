@@ -13,7 +13,7 @@ cd ~/.kube
 sudo cat /etc/rancher/k3s/k3s.yaml > config
 
 Note: 
-If system restart needed have to start the k3s server again
+If system restart needed need to start the k3s server again
 
 Start ClickHouse dashboard on Vagrant (start on host 0.0.0.0 and port 8081)
 

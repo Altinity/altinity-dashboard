@@ -1,0 +1,46 @@
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "hashicorp/bionic64"
+  #Ubuntu 18.04
+  config.vm.box_check_update = false
+  config.vm.network "forwarded_port", guest: 8081, host: 8080
+    config.vm.provider "virtualbox" do |vb|
+      vb.gui = false
+      vb.cpus = 2
+      vb.memory = "4096"
+    end
+
+  config.vm.provision "shell", inline: <<-SHELL
+  #!/bin/bash
+  # Update apt and get dependencies
+  sudo apt-get -y update
+  sudo apt-mark hold grub 
+  sudo apt-mark hold grub-pc
+  sudo apt-get -y upgrade
+  sudo apt-get install -y zip unzip curl wget socat ebtables git vim 
+  # install kubectl and docker
+  curl -LO 'https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl'
+  curl -LO "https://dl.k8s.io/v1.22.0/bin/linux/amd64/kubectl.sha256"
+  echo "$(<kubectl.sha256) kubectl" | sha256sum --check
+  sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+  kubectl version
+  sudo apt-get update
+  sudo apt-get install -y ca-certificates curl gnupg lsb-release
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" |sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  sudo apt-get update
+  sudo apt install -y docker-ce docker-ce-cli containerd.io
+  sudo usermod -aG docker $USER && newgrp docker
+  sudo apt-get update
+  docker --version
+  # install kind
+  curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-linux-amd64
+  chmod +x ./kind
+  sudo mv ./kind /usr/local/bin
+  # create kind cluster and kube config file
+  mkdir ~/.kube
+  sudo chmod -R 755 ~/.kube
+  kind create cluster
+  kind get clusters
+  SHELL
+end
