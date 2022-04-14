@@ -5,8 +5,17 @@
 #  of Altinity Inc. Any dissemination of this information or
 #  reproduction of this material is strictly forbidden unless
 #  prior written permission is obtained from Altinity Inc.
+import time
+
 from testflows.core import *
 from testflows.texts import *
+from selenium import webdriver as selenium_webdriver
+from selenium.webdriver.remote.webdriver import *
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.common.by import By as SelectBy
 
 
 @TextStep(Given)
@@ -43,15 +52,17 @@ def open_terminal(self, command=["/bin/bash"], timeout=100):
                 terminal.close()
 
 
-@TestStep(Then)
+@TestStep(When)
 def create_vagrant_with_minikube(self):
     """Check creating Vagrant VM with minikube installed"""
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
     vagrant_connect_command = "vagrant ssh"
     minikube_start_command = "minikube start"
-    adash_start_command = "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 &"
-    open_altinity_dashboard = "http://0.0.0.0:8080?token=<ADASH TOKEN>"
+    adash_start_command = (
+        "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
+    )
+
     link_to_altinity_dashboard_releases = (
         "https://github.com/Altinity/altinity-dashboard/releases"
     )
@@ -86,8 +97,23 @@ def create_vagrant_with_minikube(self):
         ):
             bash(minikube_start_command, self.context.vm_terminal)
 
-        with And(
-            "start Altinity Dashboard inside the VM with open host and 8081 port  ",
-            description=f"{adash_start_command}",
-        ):
-            bash(adash_start_command, self.context.vm_terminal)
+
+@TestStep(When)
+def start_adash(self):
+    """start Adash in background inside VM"""
+    adash_start_command = (
+        "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
+    )
+    with When(
+        "Connect to VM and run the Adash in background",
+        description=f"{adash_start_command}",
+    ):
+        bash(adash_start_command, self.context.vm_terminal)
+
+
+@TestStep(When)
+def halt_vagrant(self):
+    """Halt the running vagrant VM"""
+    with Given("vagrant vm is already running"):
+        with When(f"I halt the vm"):
+            os.system("vagrant halt")
