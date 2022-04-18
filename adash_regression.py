@@ -27,15 +27,15 @@ def adash_regression(
     self.context.on_browser = browser
     self.context.local = local
     self.context.global_wait_time = global_wait_time
+    self.context.webdriver_path = local_webdriver_path
 
-    with Given("I need to setup the Selenium webdriver "):
+    with Given("I need to check the Selenium webdriver"):
         attribute(
             "wedriver.version",
             subprocess.check_output(
                 [local_webdriver_path, "--version"], encoding="utf-8"
             ).strip(),
         )
-        self.context.webdriver_path = local_webdriver_path
 
     with Given("I need to check the Oracle Virtual box"):
         attribute(

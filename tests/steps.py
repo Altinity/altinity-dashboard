@@ -316,3 +316,11 @@ def deploy_cho_install_ch(self):
             )
             Create_btn.click()
             time.sleep(0.5)
+
+
+@TestStep(When)
+def halt_vagrant(self):
+    """Halt the running vagrant VM"""
+    with Given("vagrant vm is already running"):
+        with When(f"I halt the vm"):
+            os.system("vagrant halt")

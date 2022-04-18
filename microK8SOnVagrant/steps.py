@@ -53,19 +53,21 @@ def open_terminal(self, command=["/bin/bash"], timeout=100):
 
 
 @TestStep(When)
-def create_vagrant_with_minikube(self):
-    """Check creating Vagrant VM with minikube installed"""
+def create_vagrant_with_microk8s(self):
+    """Check creating Vagrant VM with MicroK8s installed"""
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
-    minikube_start_command = "minikube start"
+    microk8s_start_command = "microk8s start"
+    adash_start_command = (
+        "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
+    )
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
-    minikube_command_to_verify_deployment = " kubectl get pods --namespace kube-system"
-    
+
     with Given("I have vagrant file with necessary configurations"):
 
-        with When(f"I start the vagrant from folder {cwd}/minikubeOnVagrant"):
+        with When(f"I start the vagrant from folder {cwd}/microK8SOnVagrant"):
             os.chdir(cwd)
-            os.chdir("./minikubeOnVagrant")
+            os.chdir("./microK8SOnVagrant")
             os.system(vagrant_up_command)
 
         with And("opening VM terminal and setting it to context"):
@@ -79,10 +81,16 @@ def create_vagrant_with_minikube(self):
         ):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
 
+        # with And(
+        #     "start the microk8s",
+        #     description=f"{microk8s_start_command}",
+        # ):
+        #     bash(microk8s_start_command, self.context.vm_terminal)
+
         with And(
-            "start minikube inside the VM", description=f"{minikube_start_command}"
+            "start microk8s inside the VM", description=f"{microk8s_start_command}"
         ):
-            bash(minikube_start_command, self.context.vm_terminal)
+            bash(microk8s_start_command, self.context.vm_terminal)
 
 
 @TestStep(When)
