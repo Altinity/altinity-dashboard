@@ -144,7 +144,7 @@ def wait_for_element_to_be_clickable(
 
 @TestStep(When)
 def run_adash_on_chrome(self):
-    """Run Altinity dashboard url on Chrome"""
+    """Run Altinity dashboard url on Chrome."""
     driver: WebDriver = self.context.driver
     open_altinity_dashboard = "http://0.0.0.0:8080"
 
@@ -164,7 +164,7 @@ def run_adash_on_chrome(self):
 
 @TestStep(When)
 def delete_chi_and_cho(self):
-    """Delete created ClickHouse Installation and ClickHouse Operator"""
+    """Delete created ClickHouse Installation and ClickHouse Operator."""
     driver: WebDriver = self.context.driver
 
     with Given("ClickHouse Installation and ClickHouse Operator already created"):
@@ -208,7 +208,7 @@ def delete_chi_and_cho(self):
 
 @TestStep(When)
 def deploy_cho_install_ch(self):
-    """Deploy ClickHouse Operator on Altinity dashboard"""
+    """Deploy ClickHouse Operator on Altinity dashboard."""
     driver: WebDriver = self.context.driver
 
     with Given("Adash is visible in chrome"):
@@ -245,13 +245,6 @@ def deploy_cho_install_ch(self):
                 SelectBy.XPATH, "/html/body/div[5]/div/div/div/footer/button[1]"
             )
             click_deploy.click()
-            time.sleep(0.5)
-
-        with And("I click on `ClickHouse Installations` tab"):
-            ch_install = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[1]/div/div/div/nav/ul/li[3]/a"
-            )
-            ch_install.click()
             time.sleep(0.5)
 
         with And("I click on `ClickHouse Installations` tab"):
@@ -320,7 +313,7 @@ def deploy_cho_install_ch(self):
 
 @TestStep(When)
 def halt_vagrant(self):
-    """Halt the running vagrant VM"""
+    """Halt the running vagrant VM."""
     with Given("vagrant vm is already running"):
         with When(f"I halt the vm"):
             os.system("vagrant halt")

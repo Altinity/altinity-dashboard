@@ -52,7 +52,7 @@ def open_terminal(self, command=["/bin/bash"], timeout=100):
                 terminal.close()
 
 
-@TestStep(When)
+@TestStep(Given)
 def create_vagrant_with_minikube(self):
     """Check creating Vagrant VM with minikube installed"""
     cwd = os.getcwd()
@@ -61,9 +61,9 @@ def create_vagrant_with_minikube(self):
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
     minikube_command_to_verify_deployment = " kubectl get pods --namespace kube-system"
     
-    with Given("I have vagrant file with necessary configurations"):
+    try:
 
-        with When(f"I start the vagrant from folder {cwd}/minikubeOnVagrant"):
+        with Given(f"I start the vagrant from folder {cwd}/minikubeOnVagrant"):
             os.chdir(cwd)
             os.chdir("./minikubeOnVagrant")
             os.system(vagrant_up_command)
@@ -84,6 +84,10 @@ def create_vagrant_with_minikube(self):
         ):
             bash(minikube_start_command, self.context.vm_terminal)
 
+        yield
+
+    finally:
+        os.chdir(cwd)    
 
 @TestStep(When)
 def start_adash(self):

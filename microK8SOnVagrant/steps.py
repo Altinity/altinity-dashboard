@@ -52,9 +52,9 @@ def open_terminal(self, command=["/bin/bash"], timeout=100):
                 terminal.close()
 
 
-@TestStep(When)
+@TestStep(Given)
 def create_vagrant_with_microk8s(self):
-    """Check creating Vagrant VM with MicroK8s installed"""
+    """Check creating Vagrant VM with MicroK8s installed."""
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
     microk8s_start_command = "microk8s start"
@@ -63,9 +63,9 @@ def create_vagrant_with_microk8s(self):
     )
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
 
-    with Given("I have vagrant file with necessary configurations"):
+    try:
 
-        with When(f"I start the vagrant from folder {cwd}/microK8SOnVagrant"):
+        with Given(f"I start the vagrant from folder {cwd}/microK8SOnVagrant"):
             os.chdir(cwd)
             os.chdir("./microK8SOnVagrant")
             os.system(vagrant_up_command)
@@ -81,24 +81,23 @@ def create_vagrant_with_microk8s(self):
         ):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
 
-        # with And(
-        #     "start the microk8s",
-        #     description=f"{microk8s_start_command}",
-        # ):
-        #     bash(microk8s_start_command, self.context.vm_terminal)
-
         with And(
             "start microk8s inside the VM", description=f"{microk8s_start_command}"
         ):
             bash(microk8s_start_command, self.context.vm_terminal)
 
+        yield
+        
+    finally:
+        os.chdir(cwd)
 
 @TestStep(When)
 def start_adash(self):
-    """start Adash in background inside VM"""
+    """Start Adash in background inside VM."""
     adash_start_command = (
         "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
     )
+    
     with When(
         "Connect to VM and run the Adash in background",
         description=f"{adash_start_command}",
