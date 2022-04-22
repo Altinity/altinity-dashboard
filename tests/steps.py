@@ -150,6 +150,7 @@ def run_adash_on_chrome(self):
 
     with Given("Adash is running in the VM"):
         with When("start the chrome with Adash url and find `Details` element"):
+            time.sleep(10)
             driver.get(open_altinity_dashboard)
             WebDriverWait(driver, 10).until(
                 EC.visibility_of_element_located(
@@ -159,156 +160,167 @@ def run_adash_on_chrome(self):
                     )
                 )
             )
-            time.sleep(0.5)
-
-
-@TestStep(When)
-def delete_chi_and_cho(self):
-    """Delete created ClickHouse Installation and ClickHouse Operator."""
-    driver: WebDriver = self.context.driver
-
-    with Given("ClickHouse Installation and ClickHouse Operator already created"):
-        with When("I click on ClickHouse Installations running instance"):
-            chi_instance = driver.find_element(
-                SelectBy.XPATH, "//*[@id='pf-dropdown-toggle-id-312']"
-            )
-            chi_instance.click()
-            time.sleep(0.5)
-
-        with And("I select `Delete` option"):
-            chi_instance_del = driver.find_element(
-                SelectBy.XPATH,
-                "/html/body/div[1]/div/main/section/table/tbody/tr[1]/td[7]/div/ul/li[2]/button",
-            )
-            chi_instance_del.click()
-            time.sleep(0.5)
-
-        with And("I click on `ClickHouse Operator` tab"):
-            cho_tab = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[1]/div/div/div/nav/ul/li[2]/a"
-            )
-            cho_tab.click()
-            time.sleep(0.5)
-
-        with And("I click on ClickHouse Operator running instance"):
-            cho_instance = driver.find_element(
-                SelectBy.XPATH, "//*[@id='pf-dropdown-toggle-id-386']"
-            )
-            cho_instance.click()
-            time.sleep(0.5)
-
-        with And("I select `Delete` option"):
-            cho_instance_del = driver.find_element(
-                SelectBy.XPATH,
-                "/html/body/div[1]/div/main/section/table/tbody/tr[1]/td[6]/div/ul/li[2]/button",
-            )
-            cho_instance_del.click()
-            time.sleep(0.5)
-
+            
 
 @TestStep(When)
 def deploy_cho_install_ch(self):
     """Deploy ClickHouse Operator on Altinity dashboard."""
     driver: WebDriver = self.context.driver
+    cho_tab="/html/body/div[1]/div/div/div/nav/ul/li[2]/a"
+    add_cho="/html/body/div[1]/div/main/section/div/div[2]/button"
+    select_ns="//*[@id='pf-context-selector-toggle-id-0']"
+    select_default_ns="/html/body/div[6]/div/div/ul/li[1]/button"
+    click_deploy="/html/body/div[5]/div/div/div/footer/button[1]"
+    ch_install="/html/body/div[1]/div/div/div/nav/ul/li[3]/a"
+    select_template="//*[@id='pf-context-selector-toggle-id-0']"
+    select_template_dropdown="/html/body/div[7]/div/div/ul/li[12]/button"
+    select_ns_chi="//*[@id='pf-context-selector-toggle-id-0']"
+    select_type="//*[@id='pf-context-selector-search-button-id-0']"
+    select_ns_search="/html/body/div[8]/div/div/div/div/input"
+    select_ns_search_icon="//*[@id='pf-context-selector-search-button-id-0']"
+    select_ns_default_chi="/html/body/div[8]/div/div/ul/li[1]/button"
+    Create_btn_chi="/html/body/div[5]/div/div/div/footer/div/div[4]/button[1]"
 
     with Given("Adash is visible in chrome"):
         with When("I click on `ClickHouse Operator` tab in the Adash"):
-            cho_tab = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[1]/div/div/div/nav/ul/li[2]/a"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=cho_tab
             )
-            cho_tab.click()
-            time.sleep(0.5)
+
+            cho_tabs = driver.find_element(
+                SelectBy.XPATH, cho_tab
+            )
+            cho_tabs.click()
 
         with And("I click on `+` button to add ClickHouse Operator"):
-            add_cho = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[1]/div/main/section/div/div[2]/button"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=add_cho
+            )         
+
+            add_chos = driver.find_element(
+                SelectBy.XPATH, add_cho
             )
-            add_cho.click()
-            time.sleep(0.5)
+            add_chos.click()
 
         with And("I click on `Select a Namespace:` drop down"):
-            select_ns = driver.find_element(
-                SelectBy.XPATH, "//*[@id='pf-context-selector-toggle-id-0']"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=select_ns
+            )         
+
+            select_nss = driver.find_element(
+                SelectBy.XPATH, select_ns
             )
-            select_ns.click()
-            time.sleep(0.5)
+            select_nss.click()
 
         with And("I click on `default` namespace"):
-            select_default_ns = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[6]/div/div/ul/li[1]/button"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=select_default_ns
+            )   
+
+            select_default_nss = driver.find_element(
+                SelectBy.XPATH, select_default_ns
             )
-            select_default_ns.click()
-            time.sleep(0.5)
+            select_default_nss.click()
 
         with And("I click on `Deploy` button"):
-            click_deploy = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[5]/div/div/div/footer/button[1]"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=click_deploy
+            )   
+
+            click_deploys = driver.find_element(
+                SelectBy.XPATH, click_deploy
             )
-            click_deploy.click()
-            time.sleep(0.5)
+            click_deploys.click()
+            time.sleep(2)
 
         with And("I click on `ClickHouse Installations` tab"):
-            ch_install = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[1]/div/div/div/nav/ul/li[3]/a"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=ch_install
+            )   
+
+            ch_installs = driver.find_element(
+                SelectBy.XPATH, ch_install
             )
-            ch_install.click()
-            time.sleep(0.5)
+            ch_installs.click()
 
         with And("I click on `+` button to add ClickHouse Installations"):
-            add_cho = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[1]/div/main/section/div/div[2]/button"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=add_cho
+            )   
+
+            add_chos = driver.find_element(
+                SelectBy.XPATH, add_cho
             )
-            add_cho.click()
-            time.sleep(0.5)
+            add_chos.click()
+            time.sleep(2)
 
         with And("I click on template example dropdown"):
-            select_template = driver.find_element(
-                SelectBy.XPATH, "//*[@id='pf-context-selector-toggle-id-0']"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=select_template
+            )   
+
+            select_templates = driver.find_element(
+                SelectBy.XPATH, select_template
             )
-            select_template.click()
-            time.sleep(0.5)
+            select_templates.click()
 
         with And("I select a installation template"):
-            select_template = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[7]/div/div/ul/li[12]/button"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=select_template_dropdown
+            )   
+
+            select_template_dropdowns = driver.find_element(
+                SelectBy.XPATH, select_template_dropdown
             )
-            select_template.click()
-            time.sleep(0.5)
+            select_template_dropdowns.click()
 
         with And("I click on `Select a Namespace To Deploy To:` dropdown"):
-            select_ns = driver.find_element(
-                SelectBy.XPATH, "//*[@id='pf-context-selector-toggle-id-0']"
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=select_ns_chi
+            )   
+
+            select_ns_chis = driver.find_element(
+                SelectBy.XPATH, select_ns_chi
             )
-            select_ns.click()
-            time.sleep(1)
+            select_ns_chis.click()
 
             wait_for_element_to_be_clickable(
                 select_type=SelectBy.XPATH,
-                element="//*[@id='pf-context-selector-search-button-id-0']",
+                element=select_ns_search_icon,
             )
-            select_ns_search = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[8]/div/div/div/div/input"
+
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=select_ns_search
+            )   
+
+            select_ns_searchs = driver.find_element(
+                SelectBy.XPATH, select_ns_search
             )
-            select_ns_search.send_keys(Keys.TAB)
-            time.sleep(0.5)
-            select_ns_search_icon = driver.find_element(
-                SelectBy.XPATH, "//*[@id='pf-context-selector-search-button-id-0']"
+            select_ns_searchs.send_keys(Keys.TAB)
+
+            select_ns_search_icons = driver.find_element(
+                SelectBy.XPATH, select_ns_search_icon
             )
-            select_ns_search_icon.send_keys(Keys.TAB)
-            time.sleep(0.5)
-            select_ns_default = driver.find_element(
-                SelectBy.XPATH, "/html/body/div[8]/div/div/ul/li[1]/button"
+            select_ns_search_icons.send_keys(Keys.TAB)
+
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=select_ns_default_chi
+            )   
+
+            select_ns_default_chis = driver.find_element(
+                SelectBy.XPATH, select_ns_default_chi
             )
-            select_ns_default.send_keys(Keys.ENTER)
-            time.sleep(0.5)
+            select_ns_default_chis.send_keys(Keys.ENTER)
 
         with And("I click `Create` button"):
-            Create_btn = driver.find_element(
-                SelectBy.XPATH,
-                "/html/body/div[5]/div/div/div/footer/div/div[4]/button[1]",
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=Create_btn_chi
+            )               
+            Create_btn_chis = driver.find_element(
+                SelectBy.XPATH,Create_btn_chi
+                ,
             )
-            Create_btn.click()
-            time.sleep(0.5)
+            Create_btn_chis.click()
 
 
 @TestStep(When)
