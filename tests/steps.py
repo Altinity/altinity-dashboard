@@ -150,8 +150,11 @@ def run_adash_on_chrome(self):
 
     with Given("Adash is running in the VM"):
         with When("start the chrome with Adash url and find `Details` element"):
-            time.sleep(10)
-            driver.get(open_altinity_dashboard)
+            
+            for attempt in retries(timeout=20, delay=5):
+                with attempt:
+                    driver.get(open_altinity_dashboard)
+
             WebDriverWait(driver, 10).until(
                 EC.visibility_of_element_located(
                     (
