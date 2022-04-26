@@ -4,8 +4,9 @@ curl -sfL https://get.k3s.io | sh -
 To verify the installation:
 systemctl status k3s
 
-To start the Server:
+To start the server:
 sudo k3s server &
+
 
 Add config into .kube folder:
 mkdir ~/.kube
@@ -13,7 +14,7 @@ cd ~/.kube
 sudo cat /etc/rancher/k3s/k3s.yaml > config
 
 Note: 
-If system restart needed need to start the k3s server again
+If system restart needed restart the k3s server
 
 Start ClickHouse dashboard on Vagrant (start on host 0.0.0.0 and port 8081)
 

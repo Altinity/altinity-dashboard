@@ -16,18 +16,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.by import By as SelectBy
-
-
-@TextStep(Given)
-def create_vagrant_file(self, name, content, type="yaml", terminal=None):
-    """Create Vagrant file."""
-    try:
-        bash(f"cat << 'HEREDOC' > {name}\n" + content + "\nHEREDOC", terminal=terminal)
-        yield name
-    finally:
-        with Finally(f"I delete {name}"):
-            bash(f"rm -rf {name}", add_to_text=False, terminal=terminal)
-
+from tests.steps import *
 
 def bash(command, terminal=None, *args, **kwargs):
     """Execute command in a terminal."""

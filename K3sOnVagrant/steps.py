@@ -42,19 +42,21 @@ def open_terminal(self, command=["/bin/bash"], timeout=100):
 
 
 @TestStep(Given)
-def create_vagrant_with_minikube(self):
-    """Check creating Vagrant VM with minikube installed"""
+def create_vagrant_with_k3s(self):
+    """Check creating Vagrant VM with K3s installed."""
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
-    minikube_start_command = "minikube start"
+    start_k3s_server_command = "sudo k3s server &"
+    adash_start_command = (
+        "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
+    )
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
-    minikube_command_to_verify_deployment = " kubectl get pods --namespace kube-system"
-    
+
     try:
 
-        with Given(f"I start the vagrant from folder {cwd}/minikubeOnVagrant"):
+        with Given(f"I start the vagrant from folder {cwd}/microK8SOnVagrant"):
             os.chdir(cwd)
-            os.chdir("./minikubeOnVagrant")
+            os.chdir("./microK8SOnVagrant")
             os.system(vagrant_up_command)
 
         with And("opening VM terminal and setting it to context"):
@@ -69,21 +71,22 @@ def create_vagrant_with_minikube(self):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
 
         with And(
-            "start minikube inside the VM", description=f"{minikube_start_command}"
+            "start microk8s inside the VM", description=f"{start_k3s_server_command}"
         ):
-            bash(minikube_start_command, self.context.vm_terminal)
+            bash(start_k3s_server_command, self.context.vm_terminal)
 
         yield
-
+        
     finally:
-        os.chdir(cwd)    
+        os.chdir(cwd)
 
 @TestStep(When)
 def start_adash(self):
-    """start Adash in background inside VM"""
+    """Start Adash in background inside VM."""
     adash_start_command = (
         "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
     )
+    
     with When(
         "Connect to VM and run the Adash in background",
         description=f"{adash_start_command}",
