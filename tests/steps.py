@@ -151,7 +151,7 @@ def run_adash_on_chrome(self):
     with Given("Adash is running in the VM"):
         with When("start the chrome with Adash url and find `Details` element"):
             
-            for attempt in retries(timeout=20, delay=5):
+            for attempt in retries(count=10, timeout=20, delay=5):
                 with attempt:
                     driver.get(open_altinity_dashboard)
 
@@ -326,9 +326,8 @@ def deploy_cho_install_ch(self):
             Create_btn_chis.click()
 
 
-@TestStep(When)
+@TestStep(Finally)
 def halt_vagrant(self):
     """Halt the running vagrant VM."""
-    with Given("vagrant vm is already running"):
-        with When(f"I halt the vm"):
-            os.system("vagrant halt")
+    with Finally("I halt the vm"):
+        os.system("vagrant halt")

@@ -11,6 +11,7 @@ from testflows.connect import SSH
 from tests.steps import *
 from minikubeOnVagrant.steps import *
 from microK8SOnVagrant.steps import *
+from KindOnVagrant.steps import *
 
 
 @TestScenario
@@ -76,6 +77,38 @@ def adash_microk8s(self):
         with Finally("exit and halt the Vagrant Vm"):
             halt_vagrant()
 
+
+@TestScenario
+@Name("Test Altinity Dashboard with Kind Kubernetes")
+def adash_kind(self):
+    """Check Altinity Dashboard with Kind distribution
+    by running Altinity Dashboard in a Vagrant VM which is configured with Kind and
+    test the dashboard url in the host machine's browser.
+    """
+    try:
+        with Given("I have Selenium webdriver installed and Vagrant is configured"):
+            self.context.driver = webdriver(
+                browser=self.context.on_browser,
+                local=self.context.local,
+                local_webdriver_path=self.context.webdriver_path,
+            )
+
+        with And("I start the Vagrant VM with Kind"):
+            create_vagrant_with_kind()
+
+        with And("I connect to VM and run the Adash in background"):
+            start_adash()
+
+        with When("I copy the Adash url to a browser in the host machine"):
+            run_adash_on_chrome()
+
+        with Then("I deploy a ClickHouse Operator and install ClickHouse using Adash GUI"):
+            deploy_cho_install_ch()
+
+    finally:        
+       with Finally("delete the Kind cluster and halt the Vagrant Vm"):
+            delete_kind_cluster()
+            halt_vagrant()
 
 @TestFeature
 @Name("adash on k8s")
