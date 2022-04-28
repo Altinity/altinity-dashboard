@@ -115,7 +115,7 @@ def adash_kind(self):
 
 @TestScenario
 @Name("Test Altinity Dashboard with K3s Kubernetes clusters")
-def adash_kind(self):
+def adash_k3s(self):
     """Check Altinity Dashboard with K3s k8s distribution
     by running Altinity Dashboard in a Vagrant VM which is configured with K3s and
     test the dashboard url in the host machine's browser.
@@ -147,7 +147,7 @@ def adash_kind(self):
 
 @TestScenario
 @Name("Test Altinity Dashboard with K0s Kubernetes clusters")
-def adash_kind(self):
+def adash_k0s(self):
     """Check Altinity Dashboard with K0s k8s distribution
     by running Altinity Dashboard in a Vagrant VM which is configured with K0s and
     test the dashboard url in the host machine's browser.
