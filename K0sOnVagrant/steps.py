@@ -42,21 +42,18 @@ def open_terminal(self, command=["/bin/bash"], timeout=100):
 
 
 @TestStep(Given)
-def create_vagrant_with_k3s(self):
-    """Check creating Vagrant VM with K3s installed."""
+def create_vagrant_with_k0s(self):
+    """Check creating Vagrant VM with K0s installed."""
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
-    start_k3s_server_command = "sudo k3s server &"
-    adash_start_command = (
-        "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
-    )
+    get_k0s_status_command = "sudo k0s status"
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
 
     try:
 
-        with Given(f"I start the vagrant from folder {cwd}/K3sOnVagrant"):
+        with Given(f"I start the vagrant from folder {cwd}/K0sOnVagrant"):
             os.chdir(cwd)
-            os.chdir("./K3sOnVagrant")
+            os.chdir("./K0sOnVagrant")
             os.system(vagrant_up_command)
 
         with And("opening VM terminal and setting it to context"):
@@ -71,9 +68,9 @@ def create_vagrant_with_k3s(self):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
 
         with And(
-            "start k3s server inside the VM", description=f"{start_k3s_server_command}"
+            "check k0s status in the VM", description=f"{get_k0s_status_command}"
         ):
-            bash(start_k3s_server_command, self.context.vm_terminal)
+            bash(get_k0s_status_command, self.context.vm_terminal)
 
         yield
         
