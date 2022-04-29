@@ -47,9 +47,6 @@ def create_vagrant_with_k3s(self):
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
     start_k3s_server_command = "sudo k3s server &"
-    adash_start_command = (
-        "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
-    )
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
 
     try:
@@ -69,11 +66,6 @@ def create_vagrant_with_k3s(self):
             description=f"{vagrant_default_mounted_dir_in_vm}",
         ):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
-
-        with And(
-            "start k3s server inside the VM", description=f"{start_k3s_server_command}"
-        ):
-            bash(start_k3s_server_command, self.context.vm_terminal)
 
         yield
         

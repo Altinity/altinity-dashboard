@@ -151,7 +151,7 @@ def run_adash_on_chrome(self):
     with Given("Adash is running in the VM"):
         with When("start the chrome with Adash url and find `Details` element"):
             
-            for attempt in retries(count=10, timeout=20, delay=5):
+            for attempt in retries(count=10, timeout=20, delay=2):
                 with attempt:
                     driver.get(open_altinity_dashboard)
 
@@ -234,7 +234,6 @@ def deploy_cho_install_ch(self):
                 SelectBy.XPATH, click_deploy
             )
             click_deploys.click()
-            time.sleep(2)
 
         with And("I click on `ClickHouse Installations` tab"):
             wait_for_element_to_be_clickable(
@@ -255,7 +254,6 @@ def deploy_cho_install_ch(self):
                 SelectBy.XPATH, add_cho
             )
             add_chos.click()
-            time.sleep(2)
 
         with And("I click on template example dropdown"):
             wait_for_element_to_be_clickable(
