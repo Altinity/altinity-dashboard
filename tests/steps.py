@@ -234,6 +234,7 @@ def deploy_cho_install_ch(self):
                 SelectBy.XPATH, click_deploy
             )
             click_deploys.click()
+            time.sleep(2)
 
         with And("I click on `ClickHouse Installations` tab"):
             wait_for_element_to_be_clickable(
@@ -254,6 +255,7 @@ def deploy_cho_install_ch(self):
                 SelectBy.XPATH, add_cho
             )
             add_chos.click()
+            time.sleep(2)
 
         with And("I click on template example dropdown"):
             wait_for_element_to_be_clickable(
