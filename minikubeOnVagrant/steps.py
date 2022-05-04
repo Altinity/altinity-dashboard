@@ -47,6 +47,7 @@ def create_vagrant_with_minikube(self):
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
     minikube_start_command = "minikube start"
+    minikube_stop_command = "minikube stop"
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
     minikube_command_to_verify_deployment = " kubectl get pods --namespace kube-system"
     
@@ -76,7 +77,9 @@ def create_vagrant_with_minikube(self):
         yield
 
     finally:
-        os.chdir(cwd)    
+        bash(minikube_stop_command, self.context.vm_terminal)
+        os.chdir(cwd)
+
 
 @TestStep(When)
 def start_adash(self):

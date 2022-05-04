@@ -142,6 +142,17 @@ def wait_for_element_to_be_clickable(
     wait.until(EC.element_to_be_clickable((select_type, element)))
 
 
+@TestStep(Given)
+def wait_for_element_to_be_invisible(self, select_type=None, element=None):
+    """An Expectation for checking that an element is either invisible or not
+    present on the DOM. Locator is used to find the element.
+    """
+    driver = self.context.driver
+
+    wait = WebDriverWait(driver, 60)
+    wait.until(EC.invisibility_of_element_located((select_type, element)))
+
+
 @TestStep(When)
 def run_adash_on_chrome(self):
     """Run Altinity dashboard url on Chrome."""
@@ -163,7 +174,112 @@ def run_adash_on_chrome(self):
                     )
                 )
             )
-            
+
+
+@TestStep(When)
+def delete_cho_remove_ch(self):
+    """Delete ClickHouse Operator and Installation from Altinity dashboard."""
+    driver: WebDriver = self.context.driver
+    cho_tab="/html/body/div[1]/div/div/div/nav/ul/li[2]/a"
+    ch_install="/html/body/div[1]/div/div/div/nav/ul/li[3]/a"
+    chi_toggle_btn="/html/body/div[1]/div/main/section/table/tbody/tr[1]/td[7]/div"
+    chi_toggle_delete="/html/body/div[1]/div/main/section/table/tbody/tr[1]/td[7]/div/ul/li[2]/button"
+    chi_delete_confm_btn="/html/body/div[3]/div/div/div/footer/button[1]"
+    cho_toggle_btn="/html/body/div[1]/div/main/section/table/tbody/tr[1]/td[6]/div"
+    cho_toggle_delete="/html/body/div[1]/div/main/section/table/tbody/tr[1]/td[6]/div/ul/li[2]/button"
+    cho_delete_confm_btn="/html/body/div[4]/div/div/div/footer/button[1]"
+
+    with Given("Adash is visible in chrome"):
+        with When("I click on `ClickHouse Installations` tab in the Adash"):
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=ch_install
+            )
+
+            ch_installs = driver.find_element(
+                SelectBy.XPATH, ch_install
+            )
+            ch_installs.click()
+
+        with And("I click toggle button to delete the ClickHouse Installation"):
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=chi_toggle_btn
+            )         
+
+            chi_toggle_btns = driver.find_element(
+                SelectBy.XPATH, chi_toggle_btn
+            )
+            chi_toggle_btns.click()
+
+        with And("I click on `Delete` drop down"):
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=chi_toggle_delete
+            )         
+
+            chi_toggle_deletes = driver.find_element(
+                SelectBy.XPATH, chi_toggle_delete
+            )
+            chi_toggle_deletes.click()
+
+        with And("I click on `Delete` confirmation button"):
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=chi_delete_confm_btn
+            )   
+
+            chi_delete_confm_btns = driver.find_element(
+                SelectBy.XPATH, chi_delete_confm_btn
+            )
+            chi_delete_confm_btns.click()
+
+        with And("I wait until `ClickHouse Installation` terminates"):
+            wait_for_element_to_be_invisible(
+            select_type=SelectBy.XPATH, element=chi_toggle_btn
+            )
+
+        with When("I click on `ClickHouse Operator` tab in the Adash"):
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=cho_tab
+            )
+
+            cho_tabs = driver.find_element(
+                SelectBy.XPATH, cho_tab
+            )
+            cho_tabs.click()
+
+        with And("I click toggle button to delete the ClickHouse Operator"):
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=cho_toggle_btn
+            )         
+
+            cho_toggle_btns = driver.find_element(
+                SelectBy.XPATH, cho_toggle_btn
+            )
+            cho_toggle_btns.click()
+
+        with And("I click on `Delete` drop down"):
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=cho_toggle_delete
+            )         
+
+            cho_toggle_deletes = driver.find_element(
+                SelectBy.XPATH, cho_toggle_delete
+            )
+            cho_toggle_deletes.click()
+
+        with And("I click on `Delete` confirmation button"):
+            wait_for_element_to_be_clickable(
+            timeout=40, select_type=SelectBy.XPATH, element=cho_delete_confm_btn
+            )   
+
+            cho_delete_confm_btns = driver.find_element(
+                SelectBy.XPATH, cho_delete_confm_btn
+            )
+            cho_delete_confm_btns.click()
+
+        with And("I wait until `ClickHouse Operator` terminates"):
+            wait_for_element_to_be_invisible(
+            select_type=SelectBy.XPATH, element=cho_toggle_btn
+            )
+
 
 @TestStep(When)
 def deploy_cho_install_ch(self):
