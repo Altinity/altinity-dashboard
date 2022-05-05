@@ -48,6 +48,8 @@ def create_vagrant_with_k3s(self):
     vagrant_up_command = "vagrant up"
     start_k3s_server_command = "sudo k3s server &"
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
+    create_kube_dir = "mkdir ~/.kube"
+    copy_config_file_command = "sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/config"
 
     try:
 
@@ -62,7 +64,7 @@ def create_vagrant_with_k3s(self):
             )
 
         with And(
-            "change the directory to vagrant default mounted directory",
+            "I change the directory to vagrant default mounted directory",
             description=f"{vagrant_default_mounted_dir_in_vm}",
         ):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
@@ -84,3 +86,4 @@ def start_adash(self):
         description=f"{adash_start_command}",
     ):
         bash(adash_start_command, self.context.vm_terminal)
+        time.sleep(2)

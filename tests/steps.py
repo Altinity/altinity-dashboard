@@ -153,6 +153,20 @@ def wait_for_element_to_be_invisible(self, select_type=None, element=None):
     wait.until(EC.invisibility_of_element_located((select_type, element)))
 
 
+@TestStep(Given)
+def wait_for_element_to_be_visible(self, select_type=None, element=None, timeout=30):
+    """An expectation for checking that an element is present on the DOM of a
+    page and visible. Visibility means that the element is not only displayed
+    but also has a height and width that is greater than 0.
+    select_type - option that follows after SelectBy. (Examples: CSS, ID, XPATH, NAME)
+    element - locator in string format(Example: "organizationId").
+    """
+    driver = self.context.driver
+
+    wait = WebDriverWait(driver, timeout)
+    wait.until(EC.visibility_of_element_located((select_type, element)))
+
+
 @TestStep(When)
 def run_adash_on_chrome(self):
     """Run Altinity dashboard url on Chrome."""
@@ -162,22 +176,21 @@ def run_adash_on_chrome(self):
     with Given("Adash is running in the VM"):
         with When("start the chrome with Adash url and find `Details` element"):
             
-            for attempt in retries(count=10, timeout=20, delay=2):
+            for attempt in retries(count=5, timeout=20, delay=10):
                 with attempt:
                     driver.get(open_altinity_dashboard)
-
-            WebDriverWait(driver, 10).until(
-                EC.visibility_of_element_located(
-                    (
-                        SelectBy.XPATH,
-                        "/html/body/div[1]/div/main/section/div[1]/div[2]/article/div[1]",
+                    WebDriverWait(driver, 10).until(
+                        EC.visibility_of_element_located(
+                            (
+                                SelectBy.XPATH,
+                                "/html/body/div[1]/div/main/section/div[1]/div[2]/article/div[1]",
+                            )
+                        )
                     )
-                )
-            )
 
 
 @TestStep(When)
-def delete_cho_remove_ch(self):
+def delete_cho_remove_ch(self, timeout=15):
     """Delete ClickHouse Operator and Installation from Altinity dashboard."""
     driver: WebDriver = self.context.driver
     cho_tab="/html/body/div[1]/div/div/div/nav/ul/li[2]/a"
@@ -192,7 +205,7 @@ def delete_cho_remove_ch(self):
     with Given("Adash is visible in chrome"):
         with When("I click on `ClickHouse Installations` tab in the Adash"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=ch_install
+            timeout=timeout, select_type=SelectBy.XPATH, element=ch_install
             )
 
             ch_installs = driver.find_element(
@@ -201,9 +214,11 @@ def delete_cho_remove_ch(self):
             ch_installs.click()
 
         with And("I click toggle button to delete the ClickHouse Installation"):
-            wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=chi_toggle_btn
-            )         
+            for attempt in retries(count=5, timeout=10, delay=2):
+                with attempt:            
+                    wait_for_element_to_be_clickable(
+                    timeout=10, select_type=SelectBy.XPATH, element=chi_toggle_btn
+                    )         
 
             chi_toggle_btns = driver.find_element(
                 SelectBy.XPATH, chi_toggle_btn
@@ -212,7 +227,7 @@ def delete_cho_remove_ch(self):
 
         with And("I click on `Delete` drop down"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=chi_toggle_delete
+            timeout=timeout, select_type=SelectBy.XPATH, element=chi_toggle_delete
             )         
 
             chi_toggle_deletes = driver.find_element(
@@ -222,7 +237,7 @@ def delete_cho_remove_ch(self):
 
         with And("I click on `Delete` confirmation button"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=chi_delete_confm_btn
+            timeout=timeout, select_type=SelectBy.XPATH, element=chi_delete_confm_btn
             )   
 
             chi_delete_confm_btns = driver.find_element(
@@ -231,13 +246,15 @@ def delete_cho_remove_ch(self):
             chi_delete_confm_btns.click()
 
         with And("I wait until `ClickHouse Installation` terminates"):
-            wait_for_element_to_be_invisible(
-            select_type=SelectBy.XPATH, element=chi_toggle_btn
-            )
+            for attempt in retries(count=5, timeout=timeout, delay=2):
+                with attempt:
+                    wait_for_element_to_be_invisible(
+                    select_type=SelectBy.XPATH, element=chi_toggle_btn
+                    )
 
         with When("I click on `ClickHouse Operator` tab in the Adash"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=cho_tab
+            timeout=timeout, select_type=SelectBy.XPATH, element=cho_tab
             )
 
             cho_tabs = driver.find_element(
@@ -246,9 +263,11 @@ def delete_cho_remove_ch(self):
             cho_tabs.click()
 
         with And("I click toggle button to delete the ClickHouse Operator"):
-            wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=cho_toggle_btn
-            )         
+            for attempt in retries(count=5, timeout=timeout, delay=2):
+                with attempt:               
+                    wait_for_element_to_be_clickable(
+                    timeout=10, select_type=SelectBy.XPATH, element=cho_toggle_btn
+                    )         
 
             cho_toggle_btns = driver.find_element(
                 SelectBy.XPATH, cho_toggle_btn
@@ -257,7 +276,7 @@ def delete_cho_remove_ch(self):
 
         with And("I click on `Delete` drop down"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=cho_toggle_delete
+            timeout=timeout, select_type=SelectBy.XPATH, element=cho_toggle_delete
             )         
 
             cho_toggle_deletes = driver.find_element(
@@ -267,7 +286,7 @@ def delete_cho_remove_ch(self):
 
         with And("I click on `Delete` confirmation button"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=cho_delete_confm_btn
+            timeout=timeout, select_type=SelectBy.XPATH, element=cho_delete_confm_btn
             )   
 
             cho_delete_confm_btns = driver.find_element(
@@ -276,13 +295,15 @@ def delete_cho_remove_ch(self):
             cho_delete_confm_btns.click()
 
         with And("I wait until `ClickHouse Operator` terminates"):
-            wait_for_element_to_be_invisible(
-            select_type=SelectBy.XPATH, element=cho_toggle_btn
-            )
+            for attempt in retries(count=5, timeout=timeout, delay=2):
+                with attempt:            
+                    wait_for_element_to_be_invisible(
+                    select_type=SelectBy.XPATH, element=cho_toggle_btn
+                    )
 
 
 @TestStep(When)
-def deploy_cho_install_ch(self):
+def deploy_cho_install_ch(self, timeout=15):
     """Deploy ClickHouse Operator on Altinity dashboard."""
     driver: WebDriver = self.context.driver
     cho_tab="/html/body/div[1]/div/div/div/nav/ul/li[2]/a"
@@ -300,10 +321,13 @@ def deploy_cho_install_ch(self):
     select_ns_default_chi="/html/body/div[8]/div/div/ul/li[1]/button"
     Create_btn_chi="/html/body/div[5]/div/div/div/footer/div/div[4]/button[1]"
 
+    chi_toggle_btn="/html/body/div[1]/div/main/section/table/tbody/tr[1]/td[7]/div"
+    cho_toggle_btn="/html/body/div[1]/div/main/section/table/tbody/tr[1]/td[6]/div"
+
     with Given("Adash is visible in chrome"):
         with When("I click on `ClickHouse Operator` tab in the Adash"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=cho_tab
+            timeout=timeout, select_type=SelectBy.XPATH, element=cho_tab
             )
 
             cho_tabs = driver.find_element(
@@ -313,7 +337,7 @@ def deploy_cho_install_ch(self):
 
         with And("I click on `+` button to add ClickHouse Operator"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=add_cho
+            timeout=timeout, select_type=SelectBy.XPATH, element=add_cho
             )         
 
             add_chos = driver.find_element(
@@ -323,7 +347,7 @@ def deploy_cho_install_ch(self):
 
         with And("I click on `Select a Namespace:` drop down"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=select_ns
+            timeout=timeout, select_type=SelectBy.XPATH, element=select_ns
             )         
 
             select_nss = driver.find_element(
@@ -333,7 +357,7 @@ def deploy_cho_install_ch(self):
 
         with And("I click on `default` namespace"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=select_default_ns
+            timeout=timeout, select_type=SelectBy.XPATH, element=select_default_ns
             )   
 
             select_default_nss = driver.find_element(
@@ -343,7 +367,7 @@ def deploy_cho_install_ch(self):
 
         with And("I click on `Deploy` button"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=click_deploy
+            timeout=timeout, select_type=SelectBy.XPATH, element=click_deploy
             )   
 
             click_deploys = driver.find_element(
@@ -352,9 +376,16 @@ def deploy_cho_install_ch(self):
             click_deploys.click()
             time.sleep(2)
 
+        with And("I wait until `ClickHouse Operator` become visible"):
+            for attempt in retries(count=5, timeout=timeout, delay=2):
+                with attempt:            
+                    wait_for_element_to_be_visible(
+                    select_type=SelectBy.XPATH, element=cho_toggle_btn
+                    )
+
         with And("I click on `ClickHouse Installations` tab"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=ch_install
+            timeout=timeout, select_type=SelectBy.XPATH, element=ch_install
             )   
 
             ch_installs = driver.find_element(
@@ -364,7 +395,7 @@ def deploy_cho_install_ch(self):
 
         with And("I click on `+` button to add ClickHouse Installations"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=add_cho
+            timeout=timeout, select_type=SelectBy.XPATH, element=add_cho
             )   
 
             add_chos = driver.find_element(
@@ -375,7 +406,7 @@ def deploy_cho_install_ch(self):
 
         with And("I click on template example dropdown"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=select_template
+            timeout=timeout, select_type=SelectBy.XPATH, element=select_template
             )   
 
             select_templates = driver.find_element(
@@ -385,7 +416,7 @@ def deploy_cho_install_ch(self):
 
         with And("I select a installation template"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=select_template_dropdown
+            timeout=timeout, select_type=SelectBy.XPATH, element=select_template_dropdown
             )   
 
             select_template_dropdowns = driver.find_element(
@@ -395,7 +426,7 @@ def deploy_cho_install_ch(self):
 
         with And("I click on `Select a Namespace To Deploy To:` dropdown"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=select_ns_chi
+            timeout=timeout, select_type=SelectBy.XPATH, element=select_ns_chi
             )   
 
             select_ns_chis = driver.find_element(
@@ -409,7 +440,7 @@ def deploy_cho_install_ch(self):
             )
 
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=select_ns_search
+            timeout=timeout, select_type=SelectBy.XPATH, element=select_ns_search
             )   
 
             select_ns_searchs = driver.find_element(
@@ -423,7 +454,7 @@ def deploy_cho_install_ch(self):
             select_ns_search_icons.send_keys(Keys.TAB)
 
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=select_ns_default_chi
+            timeout=timeout, select_type=SelectBy.XPATH, element=select_ns_default_chi
             )   
 
             select_ns_default_chis = driver.find_element(
@@ -433,7 +464,7 @@ def deploy_cho_install_ch(self):
 
         with And("I click `Create` button"):
             wait_for_element_to_be_clickable(
-            timeout=40, select_type=SelectBy.XPATH, element=Create_btn_chi
+            timeout=timeout, select_type=SelectBy.XPATH, element=Create_btn_chi
             )               
             Create_btn_chis = driver.find_element(
                 SelectBy.XPATH,Create_btn_chi

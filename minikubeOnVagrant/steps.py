@@ -77,7 +77,6 @@ def create_vagrant_with_minikube(self):
         yield
 
     finally:
-        bash(minikube_stop_command, self.context.vm_terminal)
         os.chdir(cwd)
 
 

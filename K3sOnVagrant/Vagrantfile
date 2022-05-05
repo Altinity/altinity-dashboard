@@ -22,7 +22,8 @@ Vagrant.configure(2) do |config|
   curl -sfL https://get.k3s.io | sh -
   # copy the k3s configuration to kubeconfig file
   mkdir ~/.kube
-  cd ~/.kube
-  sudo cat /etc/rancher/k3s/k3s.yaml > config
+  sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/config
+  sudo chmod -R 755 ~/.kube
+  sudo k3s server &
   SHELL
 end
