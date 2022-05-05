@@ -11,25 +11,39 @@ permissions:
   contents: read
   packages: write
 
+env:
+  GO_VERSION: 1.16
+  NODE_VERSION: 16
+
 jobs:
   lint-and-build:
     runs-on: ubuntu-latest
     steps:
-
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
 
       - name: Check out repo
         uses: actions/checkout@v2
         with:
           submodules: recursive
 
+      - name: Cache Go build dirs
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
       - name: Install Node
         uses: actions/setup-node@v2
         with:
-          node-version: 16
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
