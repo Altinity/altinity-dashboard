@@ -54,10 +54,11 @@ jobs:
         run: make ui
 
       - name: Run Go linter
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.43
+          version: latest
           skip-go-installation: true
+          skip-cache: true
 
       - name: Run Javascript linter
         run: cd ui && npx eslint --max-warnings=0 src/
