@@ -74,6 +74,7 @@ def create_vagrant_with_kind(self):
             "create kind cluster inside the VM", description=f"{kind_create_cluster_cmd}"
         ):
             bash(kind_create_cluster_cmd, self.context.vm_terminal)
+            time.sleep(5)
 
         yield
         
