@@ -9,13 +9,6 @@ import time
 
 from testflows.core import *
 from testflows.texts import *
-from selenium import webdriver as selenium_webdriver
-from selenium.webdriver.remote.webdriver import *
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.common.by import By as SelectBy
 
 
 def bash(command, terminal=None, *args, **kwargs):
@@ -51,7 +44,7 @@ def create_vagrant_with_k0s(self):
 
     try:
 
-        with Given(f"I start the vagrant from folder {cwd}/K0sOnVagrant"):
+        with By(f"starting the vagrant from folder {cwd}/K0sOnVagrant"):
             os.chdir(cwd)
             os.chdir("./K0sOnVagrant")
             os.system(vagrant_up_command)
@@ -62,13 +55,13 @@ def create_vagrant_with_k0s(self):
             )
 
         with And(
-            "change the directory to vagrant default mounted directory",
+            "changing the directory to vagrant default mounted directory",
             description=f"{vagrant_default_mounted_dir_in_vm}",
         ):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
 
         with And(
-            "check k0s status in the VM", description=f"{get_k0s_status_command}"
+            "checking k0s status in the VM", description=f"{get_k0s_status_command}"
         ):
             bash(get_k0s_status_command, self.context.vm_terminal)
 

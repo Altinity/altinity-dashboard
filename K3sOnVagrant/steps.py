@@ -9,13 +9,6 @@ import time
 
 from testflows.core import *
 from testflows.texts import *
-from selenium import webdriver as selenium_webdriver
-from selenium.webdriver.remote.webdriver import *
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.common.by import By as SelectBy
 
 
 def bash(command, terminal=None, *args, **kwargs):
@@ -46,14 +39,10 @@ def create_vagrant_with_k3s(self):
     """Check creating Vagrant VM with K3s installed."""
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
-    start_k3s_server_command = "sudo k3s server &"
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
-    create_kube_dir = "mkdir ~/.kube"
-    copy_config_file_command = "sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/config"
 
     try:
-
-        with Given(f"I start the vagrant from folder {cwd}/K3sOnVagrant"):
+        with By(f"starting the vagrant from folder {cwd}/K3sOnVagrant"):
             os.chdir(cwd)
             os.chdir("./K3sOnVagrant")
             os.system(vagrant_up_command)
@@ -64,13 +53,13 @@ def create_vagrant_with_k3s(self):
             )
 
         with And(
-            "I change the directory to vagrant default mounted directory",
+            "changing the directory to vagrant default mounted directory",
             description=f"{vagrant_default_mounted_dir_in_vm}",
         ):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
 
         yield
-        
+    
     finally:
         os.chdir(cwd)
 

@@ -9,14 +9,7 @@ import time
 
 from testflows.core import *
 from testflows.texts import *
-from selenium import webdriver as selenium_webdriver
-from selenium.webdriver.remote.webdriver import *
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.common.by import By as SelectBy
-from tests.steps import *
+
 
 def bash(command, terminal=None, *args, **kwargs):
     """Execute command in a terminal."""
@@ -47,14 +40,11 @@ def create_vagrant_with_kind(self):
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
     kind_create_cluster_cmd = "kind create cluster"
-    adash_start_command = (
-        "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
-    )
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
 
     try:
 
-        with Given(f"I start the vagrant from folder {cwd}/KindOnVagrant"):
+        with By(f"I starting the vagrant from folder {cwd}/KindOnVagrant"):
             os.chdir(cwd)
             os.chdir("./KindOnVagrant")
             os.system(vagrant_up_command)
@@ -65,13 +55,13 @@ def create_vagrant_with_kind(self):
             )
 
         with And(
-            "change the directory to vagrant default mounted directory",
+            "changing the directory to vagrant default mounted directory",
             description=f"{vagrant_default_mounted_dir_in_vm}",
         ):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
 
         with And(
-            "create kind cluster inside the VM", description=f"{kind_create_cluster_cmd}"
+            "creating kind cluster inside the VM", description=f"{kind_create_cluster_cmd}"
         ):
             bash(kind_create_cluster_cmd, self.context.vm_terminal)
             time.sleep(5)

@@ -9,13 +9,6 @@ import time
 
 from testflows.core import *
 from testflows.texts import *
-from selenium import webdriver as selenium_webdriver
-from selenium.webdriver.remote.webdriver import *
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.common.by import By as SelectBy
 
 
 def bash(command, terminal=None, *args, **kwargs):
@@ -47,14 +40,11 @@ def create_vagrant_with_microk8s(self):
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
     microk8s_start_command = "microk8s start"
-    adash_start_command = (
-        "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
-    )
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
 
     try:
 
-        with Given(f"I start the vagrant from folder {cwd}/microK8SOnVagrant"):
+        with By(f"starting the vagrant from folder {cwd}/microK8SOnVagrant"):
             os.chdir(cwd)
             os.chdir("./microK8SOnVagrant")
             os.system(vagrant_up_command)
@@ -65,13 +55,13 @@ def create_vagrant_with_microk8s(self):
             )
 
         with And(
-            "change the directory to vagrant default mounted directory",
+            "changing the directory to vagrant default mounted directory",
             description=f"{vagrant_default_mounted_dir_in_vm}",
         ):
             bash(vagrant_default_mounted_dir_in_vm, self.context.vm_terminal)
 
         with And(
-            "start microk8s inside the VM", description=f"{microk8s_start_command}"
+            "starting microk8s inside the VM", description=f"{microk8s_start_command}"
         ):
             bash(microk8s_start_command, self.context.vm_terminal)
 
