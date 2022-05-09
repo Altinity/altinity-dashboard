@@ -3,7 +3,7 @@
 
 (c) 2022 Altinity Inc. All Rights Reserved.
 
-**Document status:** Confidential
+**Document status:** Public
 
 **Author:** vzakaznikov
 

@@ -36,13 +36,11 @@ def open_terminal(self, command=["/bin/bash"], timeout=100):
 
 @TestStep(Given)
 def create_vagrant_with_minikube(self):
-    """Check creating Vagrant VM with minikube installed"""
+    """Check creating Vagrant VM with minikube installed."""
     cwd = os.getcwd()
     vagrant_up_command = "vagrant up"
     minikube_start_command = "minikube start"
-    minikube_stop_command = "minikube stop"
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
-    minikube_command_to_verify_deployment = " kubectl get pods --namespace kube-system"
     
     try:
 
@@ -75,7 +73,7 @@ def create_vagrant_with_minikube(self):
 
 @TestStep(When)
 def start_adash(self):
-    """start Adash in background inside VM"""
+    """Start Adash in background inside VM."""
     adash_start_command = (
         "./adash-linux-x86_64 --bindhost 0.0.0.0 -bindport 8081 -notoken &"
     )

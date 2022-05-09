@@ -358,7 +358,7 @@ QA_SRS001_Altinity_Dashboard = Specification(
 
 (c) 2022 Altinity Inc. All Rights Reserved.
 
-**Document status:** Confidential
+**Document status:** Public
 
 **Author:** vzakaznikov
 
