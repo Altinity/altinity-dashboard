@@ -73,7 +73,7 @@
     "@patternfly/react-charts": "^6.67.1",
     "@patternfly/react-code-editor": "^4.39.19",
     "@patternfly/react-core": "^4.181.1",
-    "@patternfly/react-icons": "^4.49.5",
+    "@patternfly/react-icons": "^4.65.1",
     "@patternfly/react-styles": "^4.48.5",
     "@patternfly/react-table": "^4.67.19",
     "async": "^3.2.3",
