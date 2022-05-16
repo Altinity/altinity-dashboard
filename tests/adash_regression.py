@@ -45,7 +45,7 @@ def adash_regression(
             ).strip(),
         )
 
-    Feature(run=load("tests.adash_on_k8s", "adash_on_k8s"))
+    Feature(run=load("adash_on_k8s", "adash_on_k8s"))
 
 
 if main():

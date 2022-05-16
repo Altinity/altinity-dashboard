@@ -8,13 +8,13 @@ import os
 
 from testflows.core import *
 from testflows.connect import SSH
-from tests.steps import *
+from steps import *
 from minikubeOnVagrant.steps import *
 from microK8SOnVagrant.steps import *
 from KindOnVagrant.steps import *
 from K3sOnVagrant.steps import *
 from K0sOnVagrant.steps import *
-from tests.requirements.requirements import *
+from requirements.requirements import *
 
 
 @TestScenario
@@ -198,7 +198,7 @@ def adash_k3s(self):
             deploy_cho_install_ch(timeout=45)
 
     finally:        
-        with Finally("exit and halt the Vagrant Vm"):
+        with Finally("I delete the ClickHouse deployments and halt the Vagrant Vm"):
             bash(delete_ch_from_default_ns, self.context.vm_terminal)
             halt_vagrant()
 
