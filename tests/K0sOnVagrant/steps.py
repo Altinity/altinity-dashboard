@@ -9,43 +9,23 @@ import time
 
 from testflows.core import *
 from testflows.texts import *
-
-
-def bash(command, terminal=None, *args, **kwargs):
-    """Execute command in a terminal."""
-    if terminal is None:
-        terminal = current().context.terminal
-
-    r = terminal(command, *args, **kwargs)
-
-    return r
-
-
-@TextStep(Given)
-def open_terminal(self, command=["/bin/bash"], timeout=100):
-    """Open host terminal."""
-    with Shell(command=command) as terminal:
-        terminal.timeout = timeout
-        terminal("echo 1")
-        try:
-            yield terminal
-        finally:
-            with Cleanup("closing terminal"):
-                terminal.close()
+from steps import bash
+from steps import open_terminal
 
 
 @TestStep(Given)
 def create_vagrant_with_k0s(self):
     """Check creating Vagrant VM with K0s installed."""
-    cwd = os.getcwd()
+    abs_dir_path = os.path.dirname(os.path.abspath(__file__))
+    abs_path_to_test_dir = f"{abs_dir_path}/../"
     vagrant_up_command = "vagrant up"
     get_k0s_status_command = "sudo k0s status"
     vagrant_default_mounted_dir_in_vm = "cd /vagrant"
 
     try:
 
-        with By(f"starting the vagrant from folder {cwd}/K0sOnVagrant"):
-            os.chdir(cwd)
+        with By(f"starting the vagrant from folder {abs_path_to_test_dir}/K0sOnVagrant"):
+            os.chdir(abs_path_to_test_dir)
             os.chdir("./K0sOnVagrant")
             os.system(vagrant_up_command)
 
@@ -68,7 +48,7 @@ def create_vagrant_with_k0s(self):
         yield
         
     finally:
-        os.chdir(cwd)
+        os.chdir(abs_path_to_test_dir)
 
 @TestStep(When)
 def start_adash(self):
