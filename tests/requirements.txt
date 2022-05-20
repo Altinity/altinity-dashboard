@@ -1,0 +1,5 @@
+python==3.8.10
+testflows==1.8.19
+selenium==4.1.0
+virtualbox
+vagrant==2.2.19
