@@ -172,10 +172,12 @@ func (o *OperatorResource) deployOrDeleteOperator(namespace string, version stri
 		version = o.chopRelease
 	}
 	deploy := processTemplate(o.opDeployTemplate, map[string]string{
-		"OPERATOR_IMAGE":             fmt.Sprintf("altinity/clickhouse-operator:%s", version),
-		"METRICS_EXPORTER_IMAGE":     fmt.Sprintf("altinity/metrics-exporter:%s", version),
-		"OPERATOR_NAMESPACE":         namespace,
-		"METRICS_EXPORTER_NAMESPACE": namespace,
+		"OPERATOR_IMAGE":                     fmt.Sprintf("altinity/clickhouse-operator:%s", version),
+		"METRICS_EXPORTER_IMAGE":             fmt.Sprintf("altinity/metrics-exporter:%s", version),
+		"OPERATOR_NAMESPACE":                 namespace,
+		"METRICS_EXPORTER_NAMESPACE":         namespace,
+		"OPERATOR_IMAGE_PULL_POLICY":         "Always",
+		"METRICS_EXPORTER_IMAGE_PULL_POLICY": "Always",
 	})
 
 	// Get existing operators

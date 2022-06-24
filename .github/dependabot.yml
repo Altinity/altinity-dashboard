@@ -14,3 +14,9 @@ updates:
     allowed-updates:
       - match:
           update_type: "security"
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "Submodule update"
