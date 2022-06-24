@@ -4,16 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    allowed-updates:
-      - match:
-          update_type: "security"
   - package-ecosystem: "npm"
     directory: "/ui"
     schedule:
       interval: "daily"
-    allowed-updates:
-      - match:
-          update_type: "security"
   - package-ecosystem: "gitsubmodule"
     directory: "/"
     schedule:
