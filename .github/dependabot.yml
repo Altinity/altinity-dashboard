@@ -4,11 +4,13 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    ignore:
+      - "clickhouse-operator"
   - package-ecosystem: "npm"
     directory: "/ui"
     schedule:
       interval: "daily"
-  - package-ecosystem: "gitsubmodule"
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
