@@ -208,10 +208,15 @@ func (c *Config) RunServer() error {
 	// Start the server, but capture errors if it immediately fails to start
 	c.Context, c.Cancel = context.WithCancel(context.Background())
 	go func() {
+		srv := &http.Server{
+			Addr:              bindStr,
+			Handler:           httpHandler,
+			ReadHeaderTimeout: 3 * time.Second,
+		}
 		if c.IsHTTPS {
-			c.ServerError = http.ListenAndServeTLS(bindStr, c.TLSCert, c.TLSKey, httpHandler)
+			c.ServerError = srv.ListenAndServeTLS(c.TLSCert, c.TLSKey)
 		} else {
-			c.ServerError = http.ListenAndServe(bindStr, httpHandler)
+			c.ServerError = srv.ListenAndServe()
 		}
 		c.Cancel()
 	}()
