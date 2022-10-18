@@ -10,7 +10,7 @@ linters:
     - asciicheck
     - bodyclose
     # - cyclop
-    - deadcode
+    # - deadcode
     - depguard
     - dogsled
     - dupl
@@ -28,7 +28,7 @@ linters:
     # - gocyclo
     # - godot
     - goerr113
-    - gofmt
+    # - gofmt
     # - gofumpt
     - goheader
     # - goimports
@@ -57,7 +57,7 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - structcheck
+    # - structcheck
     # - stylecheck
     - testpackage
     - thelper
@@ -66,7 +66,7 @@ linters:
     - unconvert
     - unparam
     - unused
-    - varcheck
+    # - varcheck
     - wastedassign
     - whitespace
     # - wrapcheck
