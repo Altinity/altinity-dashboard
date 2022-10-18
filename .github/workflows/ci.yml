@@ -57,7 +57,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          skip-go-installation: true
           skip-cache: true
 
       - name: Run Javascript linter
