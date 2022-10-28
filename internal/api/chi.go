@@ -7,13 +7,13 @@ import (
 	"github.com/altinity/altinity-dashboard/internal/utils"
 	chopv1 "github.com/altinity/clickhouse-operator/pkg/apis/clickhouse.altinity.com/v1"
 	"github.com/emicklei/go-restful/v3"
-	"github.com/kubernetes-sigs/yaml"
 	v1 "k8s.io/api/core/v1"
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"log"
 	"net/http"
+	"sigs.k8s.io/yaml"
 )
 
 // ChiResource is the REST layer to ClickHouse Installations
