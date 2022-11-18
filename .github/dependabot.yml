@@ -6,6 +6,8 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: "clickhouse-operator"
+      - dependency-name: "github.com/emicklei/go-restful/v3"
+        versions: ["3.10.0"]
   - package-ecosystem: "npm"
     directory: "/ui"
     schedule:
