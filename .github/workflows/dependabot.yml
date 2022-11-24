@@ -1,0 +1,31 @@
+name: dependabot-auto-merge
+
+on:
+  pull_request_target:
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  dependabot-auto-merge:
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Dependabot metadata
+        id: dependabot-metadata
+        uses: dependabot/fetch-metadata@v1.3.1
+
+      - name: Enable auto-merge for Dependabot PRs
+        run: gh pr merge --auto --rebase "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Approve Dependabot PRs
+        run: gh pr review $PR_URL --approve -b "Auto-approval of Dependabot PRs"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
