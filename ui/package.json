@@ -79,7 +79,7 @@
     "async": "^3.2.4",
     "concurrently": "^7.6.0",
     "jssha": "^3.3.0",
-    "minimist": "^1.2.7",
+    "minimist": "^1.2.8",
     "node-forge": "^1.3.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
