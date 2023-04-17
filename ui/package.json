@@ -23,7 +23,7 @@
     "install-git-hooks": "cd .. && husky install ui/.husky"
   },
   "devDependencies": {
-    "@types/enzyme": "^3.10.11",
+    "@types/enzyme": "^3.10.13",
     "@types/jest": "^27.4.1",
     "@types/react-router-dom": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
