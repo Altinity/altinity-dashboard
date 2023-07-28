@@ -75,7 +75,7 @@
     "@patternfly/react-core": "^5.0.0",
     "@patternfly/react-icons": "^4.93.6",
     "@patternfly/react-styles": "^5.0.0",
-    "@patternfly/react-table": "^4.113.0",
+    "@patternfly/react-table": "^5.0.0",
     "async": "^3.2.4",
     "concurrently": "^8.2.0",
     "jssha": "^3.3.0",
