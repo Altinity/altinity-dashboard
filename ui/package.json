@@ -89,6 +89,6 @@
     "semver": "^7.5.4",
     "sirv-cli": "^2.0.2",
     "stream": "^0.0.2",
-    "swagger-ui-react": "^5.9.2"
+    "swagger-ui-react": "^5.9.3"
   }
 }
