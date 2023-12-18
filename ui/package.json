@@ -52,7 +52,7 @@
     "react-axe": "^3.5.4",
     "react-docgen-typescript-loader": "^2.2.0",
     "react-router-dom": "^5.3.0",
-    "regenerator-runtime": "^0.14.0",
+    "regenerator-runtime": "^0.14.1",
     "rimraf": "^5.0.5",
     "style-loader": "^3.3.3",
     "svg-url-loader": "^8.0.0",
