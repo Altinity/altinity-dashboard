@@ -76,7 +76,7 @@ jobs:
         run: (cd ui && npm version patch)
 
       - name: Create pull request bumping the version number
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
           commit-message: 'Automatic version number bump after release'
           title: 'Automatic version number bump after release'
