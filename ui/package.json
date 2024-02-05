@@ -70,7 +70,7 @@
     "webpack-merge": "^5.10.0"
   },
   "dependencies": {
-    "@patternfly/react-charts": "^7.1.2",
+    "@patternfly/react-charts": "^7.2.0",
     "@patternfly/react-code-editor": "^4.82.104",
     "@patternfly/react-core": "^5.1.2",
     "@patternfly/react-icons": "^5.1.1",
