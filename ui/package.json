@@ -45,7 +45,7 @@
     "imagemin": "^8.0.0",
     "jest": "^27.5.1",
     "mini-css-extract-plugin": "^2.8.0",
-    "postcss": "^8.4.33",
+    "postcss": "^8.4.34",
     "prettier": "^3.2.5",
     "prop-types": "^15.8.1",
     "raw-loader": "^4.0.2",
