@@ -54,7 +54,7 @@ jobs:
         run: make ui
 
       - name: Run Go linter
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v5
         with:
           version: latest
           skip-cache: true
