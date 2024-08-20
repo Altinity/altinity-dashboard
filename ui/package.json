@@ -44,7 +44,7 @@
     "husky": "^9.1.4",
     "imagemin": "^9.0.0",
     "jest": "^27.5.1",
-    "mini-css-extract-plugin": "^2.9.0",
+    "mini-css-extract-plugin": "^2.9.1",
     "postcss": "^8.4.41",
     "prettier": "^3.3.3",
     "prop-types": "^15.8.1",
