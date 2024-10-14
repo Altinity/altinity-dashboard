@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/altinity/clickhouse-operator v0.0.0-20211101130143-50134723c388
-	github.com/emicklei/go-restful-openapi/v2 v2.10.2
+	github.com/emicklei/go-restful-openapi/v2 v2.11.0
 	github.com/emicklei/go-restful/v3 v3.11.0
 	github.com/go-openapi/spec v0.21.0
 	k8s.io/api v0.23.1
