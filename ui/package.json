@@ -86,7 +86,7 @@
     "react-monaco-editor": "^0.41.2",
     "react-page-visibility": "^7.0.0",
     "react-router-last-location": "git://github.com/hinok/react-router-last-location#2d57c676abb49f3f5755c44fbe2c24b01a8bb68b",
-    "semver": "^7.7.0",
+    "semver": "^7.7.1",
     "sirv-cli": "^3.0.0",
     "stream": "^0.0.3",
     "swagger-ui-react": "^5.18.3"
