@@ -71,7 +71,7 @@
   },
   "dependencies": {
     "@patternfly/react-charts": "^8.2.1",
-    "@patternfly/react-code-editor": "^6.2.0",
+    "@patternfly/react-code-editor": "^6.2.1",
     "@patternfly/react-core": "^6.2.1",
     "@patternfly/react-icons": "^6.2.0",
     "@patternfly/react-styles": "^6.1.0",
