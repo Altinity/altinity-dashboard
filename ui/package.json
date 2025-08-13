@@ -30,7 +30,7 @@
     "@typescript-eslint/parser": "^8.39.1",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.8.0",
     "buffer": "^6.0.3",
-    "copy-webpack-plugin": "^13.0.0",
+    "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.2",
     "dotenv-webpack": "^8.1.1",
