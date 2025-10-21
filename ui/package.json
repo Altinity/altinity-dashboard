@@ -27,7 +27,7 @@
     "@types/jest": "^30.0.0",
     "@types/react-router-dom": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
-    "@typescript-eslint/parser": "^8.46.1",
+    "@typescript-eslint/parser": "^8.46.2",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.8.0",
     "buffer": "^6.0.3",
     "copy-webpack-plugin": "^13.0.1",
