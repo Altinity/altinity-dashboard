@@ -109,11 +109,11 @@ github.com/go-openapi/jsonpointer v0.22.1 h1:sHYI1He3b9NqJ4wXLoJDKmUmHkWy/L7rtEo
 github.com/go-openapi/jsonpointer v0.22.1/go.mod h1:pQT9OsLkfz1yWoMgYFy4x3U5GY5nUlsOn1qSBH5MkCM=
 github.com/go-openapi/jsonreference v0.19.3/go.mod h1:rjx6GuL8TTa9VaixXglHmQmIL98+wF9xc8zWvFonSJ8=
 github.com/go-openapi/jsonreference v0.20.0/go.mod h1:Ag74Ico3lPc+zR+qjn4XBUmXymS4zJbYVCZmcgkasdo=
-github.com/go-openapi/jsonreference v0.21.2 h1:Wxjda4M/BBQllegefXrY/9aq1fxBA8sI5M/lFU6tSWU=
-github.com/go-openapi/jsonreference v0.21.2/go.mod h1:pp3PEjIsJ9CZDGCNOyXIQxsNuroxm8FAJ/+quA0yKzQ=
+github.com/go-openapi/jsonreference v0.21.3 h1:96Dn+MRPa0nYAR8DR1E03SblB5FJvh7W6krPI0Z7qMc=
+github.com/go-openapi/jsonreference v0.21.3/go.mod h1:RqkUP0MrLf37HqxZxrIAtTWW4ZJIK1VzduhXYBEeGc4=
 github.com/go-openapi/spec v0.20.9/go.mod h1:2OpW+JddWPrpXSCIX8eOx7lZ5iyuWj3RYR6VaaBKcWA=
-github.com/go-openapi/spec v0.22.0 h1:xT/EsX4frL3U09QviRIZXvkh80yibxQmtoEvyqug0Tw=
-github.com/go-openapi/spec v0.22.0/go.mod h1:K0FhKxkez8YNS94XzF8YKEMULbFrRw4m15i2YUht4L0=
+github.com/go-openapi/spec v0.22.1 h1:beZMa5AVQzRspNjvhe5aG1/XyBSMeX1eEOs7dMoXh/k=
+github.com/go-openapi/spec v0.22.1/go.mod h1:c7aeIQT175dVowfp7FeCvXXnjN/MrpaONStibD2WtDA=
 github.com/go-openapi/swag v0.19.5/go.mod h1:POnQmlKehdgb5mhVOsnJFsivZCEZ/vjK9gh66Z9tfKk=
 github.com/go-openapi/swag v0.19.15 h1:D2NRCBzS9/pEY3gP9Nl8aDqGUcPFrwG2p+CNFrLyrCM=
 github.com/go-openapi/swag v0.19.15/go.mod h1:QYRuS/SOXUCsnplDa677K7+DxSOj6IPNl/eQntq43wQ=
@@ -133,6 +133,8 @@ github.com/go-openapi/swag/typeutils v0.25.1 h1:rD/9HsEQieewNt6/k+JBwkxuAHktFtH3
 github.com/go-openapi/swag/typeutils v0.25.1/go.mod h1:9McMC/oCdS4BKwk2shEB7x17P6HmMmA6dQRtAkSnNb8=
 github.com/go-openapi/swag/yamlutils v0.25.1 h1:mry5ez8joJwzvMbaTGLhw8pXUnhDK91oSJLDPF1bmGk=
 github.com/go-openapi/swag/yamlutils v0.25.1/go.mod h1:cm9ywbzncy3y6uPm/97ysW8+wZ09qsks+9RS8fLWKqg=
+github.com/go-openapi/testify/v2 v2.0.2 h1:X999g3jeLcoY8qctY/c/Z8iBHTbwLz7R2WXd6Ub6wls=
+github.com/go-openapi/testify/v2 v2.0.2/go.mod h1:HCPmvFFnheKK2BuwSA0TbbdxJ3I16pjwMkYkP4Ywn54=
 github.com/gogo/protobuf v1.3.2 h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=
 github.com/gogo/protobuf v1.3.2/go.mod h1:P1XiOD3dCwIKUDQYPy72D8LYyHL2YPYrpS2s69NZV8Q=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
@@ -268,8 +270,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
-github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
-github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
+github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
+github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/sanity-io/litter v1.3.0 h1:5ZO+weUsqdSWMUng5JnpkW/Oz8iTXiIdeumhQr1sSjs=
 github.com/sanity-io/litter v1.3.0/go.mod h1:5Z71SvaYy5kcGtyglXOC9rrUi3c1E8CamFWjQsazTh0=
 github.com/spf13/afero v1.2.2/go.mod h1:9ZxEEn6pIJ8Rxe320qSDBk6AsU0r9pR7Q4OcevTdifk=
