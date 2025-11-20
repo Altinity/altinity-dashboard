@@ -64,7 +64,7 @@
     "typescript": "5.9.3",
     "url-loader": "^4.1.1",
     "webpack": "^5.103.0",
-    "webpack-bundle-analyzer": "^4.10.2",
+    "webpack-bundle-analyzer": "^5.0.1",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.2",
     "webpack-merge": "^6.0.1"
