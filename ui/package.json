@@ -46,7 +46,7 @@
     "jest": "^30.2.0",
     "mini-css-extract-plugin": "^2.9.4",
     "postcss": "^8.5.6",
-    "prettier": "^3.7.3",
+    "prettier": "^3.7.4",
     "prop-types": "^15.8.1",
     "raw-loader": "^4.0.2",
     "react-axe": "^3.5.4",
