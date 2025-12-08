@@ -32,7 +32,7 @@
     "buffer": "^6.0.3",
     "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.2",
-    "css-minimizer-webpack-plugin": "^7.0.2",
+    "css-minimizer-webpack-plugin": "^7.0.3",
     "dotenv-webpack": "^8.1.1",
     "enzyme": "^3.11.0",
     "enzyme-to-json": "^3.6.2",
