@@ -63,7 +63,7 @@
     "tslib": "^2.8.1",
     "typescript": "5.9.3",
     "url-loader": "^4.1.1",
-    "webpack": "^5.104.0",
+    "webpack": "^5.104.1",
     "webpack-bundle-analyzer": "^5.1.0",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.2",
